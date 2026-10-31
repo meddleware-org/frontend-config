@@ -1,0 +1,160 @@
+{
+  "name": "@meddleware/frontend-config",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Shared frontend tooling for MeddleWare apps: browser support, ESLint, Stylelint, html-validate, PostCSS, Playwright, axe, screenshots, Lighthouse and the Vite target.",
+  "license": "0BSD",
+  "author": "MeddleWare <dev@meddleware.co.uk>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meddleware-org/frontend-config.git"
+  },
+  "keywords": [
+    "browserslist",
+    "eslint",
+    "stylelint",
+    "html-validate",
+    "playwright",
+    "accessibility",
+    "wcag",
+    "vue"
+  ],
+  "files": [
+    "src",
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./browserslist-config": "./src/browserslist-config.cjs",
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "default": "./src/eslint.js"
+    },
+    "./stylelint": {
+      "types": "./dist/stylelint.d.ts",
+      "default": "./src/stylelint.js"
+    },
+    "./html-validate": {
+      "types": "./dist/html-validate.d.ts",
+      "default": "./src/html-validate.js"
+    },
+    "./postcss": {
+      "types": "./dist/postcss.d.ts",
+      "default": "./src/postcss.js"
+    },
+    "./playwright": {
+      "types": "./dist/playwright.d.ts",
+      "default": "./src/playwright.js"
+    },
+    "./look": {
+      "types": "./dist/look.d.ts",
+      "default": "./src/look.js"
+    },
+    "./axe": {
+      "types": "./dist/axe.d.ts",
+      "default": "./src/axe.js"
+    },
+    "./a11y": {
+      "types": "./dist/a11y.d.ts",
+      "default": "./src/a11y.js"
+    },
+    "./shots": {
+      "types": "./dist/shots.d.ts",
+      "default": "./src/shots.js"
+    },
+    "./lighthouserc": {
+      "types": "./dist/lighthouserc.d.ts",
+      "default": "./src/lighthouserc.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./src/vite.js"
+    },
+    "./vitest": {
+      "types": "./dist/vitest.d.ts",
+      "default": "./src/vitest.js"
+    },
+    "./wallet": {
+      "types": "./dist/wallet.d.ts",
+      "default": "./src/wallet.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "~4.14.0",
+    "@double-great/stylelint-a11y": "^3.8.1",
+    "@meddleware/eslint-config": "^0.0.4",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "autoprefixer": "^10.6.2",
+    "browserslist-to-esbuild": "^2.1.1",
+    "eslint-plugin-compat": "^7.0.2",
+    "eslint-plugin-vue": "^10.12.0",
+    "eslint-plugin-vuejs-accessibility": "^2.6.3",
+    "html-validate-vue": "^9.3.1",
+    "postcss-html": "^2.0.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-declaration-strict-value": "^1.12.1",
+    "stylelint-no-unsupported-browser-features": "^8.1.2",
+    "typescript-eslint": "^8.72.1",
+    "vue-eslint-parser": "^10.4.1"
+  },
+  "peerDependencies": {
+    "@playwright/test": "~1.64.1",
+    "eslint": "^10.0.0",
+    "html-validate": "^11.0.0",
+    "postcss": "^8.5.0",
+    "stylelint": "^17.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@playwright/test": {
+      "optional": true
+    },
+    "html-validate": {
+      "optional": true
+    },
+    "postcss": {
+      "optional": true
+    },
+    "stylelint": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "~1.64.1",
+    "@types/node": "~26.6.5",
+    "browserslist": "^4.29.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.0.0",
+    "html-validate": "^11.17.0",
+    "jsdom": "^30.1.3",
+    "postcss": "^8.5.32",
+    "stylelint": "^17.16.0",
+    "typescript": "~6.0.3",
+    "vitest": "~5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 ChromeAndroid versions",
+    "last 2 Edge versions",
+    "last 2 Firefox versions",
+    "last 2 FirefoxAndroid versions",
+    "last 2 Safari versions",
+    "last 2 iOS versions",
+    "last 2 Samsung versions",
+    "Firefox ESR",
+    "not dead"
+  ]
+}

@@ -1,0 +1,74 @@
+name: Node CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  # The release workflow runs the same checks on the tagged commit.
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Type-check & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo docker.io/rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 -color
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Install Chromium (axe helper test)
+        run: npx playwright install --with-deps chromium
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Package contents
+        run: |
+          npm pack --dry-run --json > pack.json
+          node -e "
+            const j = JSON.parse(require('fs').readFileSync('pack.json', 'utf8'))
+            const p = Array.isArray(j) ? j[0] : Object.values(j)[0] // npm 12 keys the report by package name
+            const files = p.files.map((f) => f.path)
+            for (const f of ['src/index.js', 'src/browserslist-config.cjs', 'dist/index.d.ts', 'package.json']) if (!files.includes(f)) { console.error('missing from the tarball:', f); process.exit(1) }
+            const stray = files.filter((f) => !/^(src\/|dist\/|package\.json\$|LICENSE\$|README\.md\$|CHANGELOG\.md\$)/.test(f))
+            if (stray.length) { console.error('unexpected files in the tarball:', stray); process.exit(1) }
+          "
+
+  node24-compat:
+    name: Node 24 compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium (axe helper test)
+        run: npx playwright install --with-deps chromium
+
+      - name: Test on the minimum supported Node
+        run: npm test
