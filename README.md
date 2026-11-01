@@ -17,7 +17,7 @@ same accessibility and browser-support bar.
 | `/shots` | `defineShots(states)` — one screenshot per state × look, for looking at the UI. |
 | `/a11y` | `defineA11ySuite(states, { aaa })` — the sweep every app runs, one call: each state in every colour mode × season at WCAG 2.2 AA and AAA, a 320 px reflow, 200% text size, forced colours, reduced motion and a keyboard pass. `expectNoHorizontalScroll`, `expectNoRunningAnimations` and `expectKeyboardFocusVisible` are exported on their own. |
 | `/vitest` | `inlineMeddleware` — the packages a test must process through Vite (they import `.css`/`.vue`), which also gives them the test's single copy of Vue; `installDialogShim()` — jsdom's missing `<dialog>` modality. |
-| `/bundle` + `check-prod-bundle` | `scanBundle(dist, { also })` and the `check-prod-bundle [dist] [--also MARKER]` command: fails when the e2e harness (the mock-wallet hooks, or an app's own stand-in marker) is found in a production build. Run it after the production build in CI and in the Dockerfile. |
+| `/bundle` + `check-prod-bundle` | `scanBundle(dist, { also })` and the `check-prod-bundle [dist] [--also TEXT]... [--also-regex PATTERN]...` command: fails when the e2e harness (the mock-wallet hooks, or an app's own stand-in marker) is found in a production build. Run it after the production build in CI and in the Dockerfile. |
 | `/wallet` | `connectMockWallet(page)`, `exposeSigner(page, signer)`, `E2E_ADDRESS` — the Playwright side of the mock wallet. |
 | `/lighthouserc` | `lighthouseConfig({ port, paths?, … })` — Lighthouse CI (accessibility must score 100). |
 
@@ -116,7 +116,7 @@ An app's end-to-end build (`vite build --mode e2e`) registers a mock wallet and 
 other build: the app's entry loads it only when `import.meta.env.MODE === 'e2e' && import.meta.env.VITE_E2E === '1'` (both static, so
 the block is removed); `assertE2eOnlyInE2eMode(mode)` from `/vite` fails a build with `VITE_E2E` set in any other mode; and
 `check-prod-bundle dist` (`/bundle`) scans the built files for the harness's hooks and fails if any is present. An app whose e2e build also
-swaps a module for a stand-in adds a marker of that stand-in: `check-prod-bundle dist --also 'a string only the stand-in contains'`.
+swaps a module for a stand-in adds a marker of that stand-in: `check-prod-bundle dist --also 'a string only the stand-in contains'` (`--also-regex` takes a pattern).
 
 ## Peers
 

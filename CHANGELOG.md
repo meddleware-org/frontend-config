@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `check-prod-bundle` (and `scanBundle` at `/bundle`): the production-artefact scan for the e2e harness, moved here from token-issuance-ui so
-  every wallet app runs the same one (the mock-wallet hooks; `--also` adds an app's own stand-in marker).
+  every wallet app runs the same one (the mock-wallet hooks; `--also` / `--also-regex` add an app's own stand-in marker).
 
 - `expectKeyboardFocusVisible` (and so `defineA11ySuite`) now also fails a stop that is entirely hidden behind sticky or fixed content when it
   takes focus (WCAG 2.4.11 focus not obscured; axe has no rule for it), going forward and then backwards through the tab order.

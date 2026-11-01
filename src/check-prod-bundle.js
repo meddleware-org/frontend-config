@@ -1,22 +1,28 @@
 #!/usr/bin/env node
 // @ts-check
-// CLI for `scanBundle`: `check-prod-bundle [dist] [--also MARKER]...`. Exit 1 when the harness is found, when `dist` is missing or when it
+// CLI for `scanBundle`: `check-prod-bundle [dist] [--also TEXT]... [--also-regex PATTERN]...` (text is matched literally). Exit 1 when the harness is found, when `dist` is missing or when it
 // holds no .js/.html file (a build that has not run must not pass).
 import { scanBundle } from './bundle.js'
 
 const args = process.argv.slice(2)
-/** @type {string[]} */
+/** @type {(string | RegExp)[]} */
 const also = []
 /** @type {string[]} */
 const rest = []
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--also') {
+  if (args[i] === '--also' || args[i] === '--also-regex') {
+    const flag = args[i]
     const marker = args[++i]
     if (!marker) {
-      console.error('check-prod-bundle: --also needs a marker')
+      console.error(`check-prod-bundle: ${flag} needs a marker`)
       process.exit(2)
     }
-    also.push(marker)
+    try {
+      also.push(flag === '--also' ? marker : new RegExp(marker))
+    } catch {
+      console.error(`check-prod-bundle: ${marker} is not a valid pattern`)
+      process.exit(2)
+    }
   } else rest.push(/** @type {string} */ (args[i]))
 }
 const dist = rest[0] ?? 'dist'

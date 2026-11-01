@@ -57,7 +57,7 @@ In scope: `src/*.js` (15 modules and the `.cjs` browserslist), `tests/*.ts` (9 f
 
 Out of scope: how each consumer configures and overrides the helpers (each consumer's audit), the design tokens, the third-party tools themselves.
 
-Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`; `node .github/audit-gate.mjs` (0 high/critical); `npm run type-check`; `npx vitest run` (9 files, 83 tests with a real Chromium; 79 before the fixes); `npm run build`; `npm pack --dry-run --json`; `npm view @meddleware/frontend-config versions dist.attestations.provenance`.
+Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`; `node .github/audit-gate.mjs` (0 high/critical); `npm run type-check`; `npx vitest run` (9 files, 84 tests with a real Chromium; 79 before the fixes); `npm run build`; `npm pack --dry-run --json`; `npm view @meddleware/frontend-config versions dist.attestations.provenance`.
 
 ## Findings
 
@@ -66,7 +66,7 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 **Where:** `src/vite.js::assertE2eOnlyInE2eMode` (guard only); consumers' CI and Dockerfiles.
 **Issue:** the wallet apps load a mock wallet and a stub chain in an e2e build, and sealed-storage-ui additionally swaps its Seal controller for a stand-in that does no encryption. The controls were (a) the entry loads the harness only when `MODE === 'e2e'` and `VITE_E2E === '1'` (static replacement), (b) `assertE2eOnlyInE2eMode` throws when `VITE_E2E` is set in another mode. Neither inspects the **built output**; only token-issuance-ui had a scan (`scripts/check-prod-bundle.mjs`, run in CI and in its Dockerfile). Base §B.2 *Test-only modes* and VUE §A *Test hooks* require the absence to be asserted on the production artefact.
 **Impact:** a future change to an entry file, a bundler upgrade that stops folding the static condition, or a mis-set mode in an image build would ship a mock wallet in a signing app, and nothing but a reviewer would notice. The stand-in controller would ship a "encryption" that returns plaintext under a fixed id.
-**Remediation / evidence:** `scanBundle` / `check-prod-bundle [dist] [--also MARKER]` (`src/bundle.js`, `src/check-prod-bundle.js`, subpath `/bundle`, package `bin`): fails on any hook the shared harness registers (`__registerMockWallet`, `__unregisterMockWallet`, `__e2eAddress`, `__e2eWalletAddress`, `__e2eSignTransaction`, `__e2eSignPersonalMessage`, `__getSuiClient`) and on app-supplied markers, fails when `dist` is missing or holds no script/HTML file (a skipped build cannot pass). 9 tests: clean build, every hook in a nested chunk, literal vs pattern markers, non-script files ignored, CLI exit codes 0/1/2. Consumers adopt it in their next releases (each app's audit, delta section); `CLAUDE.md` requires a new hook in `wallet-adapter/testing` to be added to `E2E_MARKERS` in the same change. 0.0.2.
+**Remediation / evidence:** `scanBundle` / `check-prod-bundle [dist] [--also TEXT]... [--also-regex PATTERN]...` (`src/bundle.js`, `src/check-prod-bundle.js`, subpath `/bundle`, package `bin`): fails on any hook the shared harness registers (`__registerMockWallet`, `__unregisterMockWallet`, `__e2eAddress`, `__e2eWalletAddress`, `__e2eSignTransaction`, `__e2eSignPersonalMessage`, `__getSuiClient`) and on app-supplied markers (literal text, or a pattern), fails when `dist` is missing or holds no script/HTML file (a skipped build cannot pass). 10 tests: clean build, every hook in a nested chunk, literal vs pattern markers, non-script files ignored, CLI exit codes 0/1/2, an invalid pattern refused. Consumers adopt it in their next releases (each app's audit, delta section); `CLAUDE.md` requires a new hook in `wallet-adapter/testing` to be added to `E2E_MARKERS` in the same change. 0.0.2.
 
 ### F2 — The keyboard sweep did not check that focus is not obscured
 **Severity:** Medium   **Disposition:** RESOLVED
@@ -128,7 +128,7 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 | I2 | WCAG 2.2 A/AA is always a hard gate; AAA is `report` / `gate` / `off` by option | `axe.js`, `index.js` tags | `axe.test.ts` (5, real Chromium) | HOLDS |
 | I3 | The sweep covers reflow at 320 px, 200% text, forced colours, reduced motion, keyboard and focus-not-obscured | `a11y.js` | `a11y.test.ts` (10) | HOLDS (F2) |
 | I4 | Every look (theme × season; viewports) is shared by screenshots and sweeps | `look.js` | `tooling.test.ts` | HOLDS |
-| I5 | A production `dist/` containing the e2e harness fails the check | `bundle.js`, `check-prod-bundle.js` | `bundle.test.ts` (9) | HOLDS (F1) |
+| I5 | A production `dist/` containing the e2e harness fails the check | `bundle.js`, `check-prod-bundle.js` | `bundle.test.ts` (10) | HOLDS (F1) |
 | I6 | `VITE_E2E` in a non-e2e mode fails a build | `vite.js::assertE2eOnlyInE2eMode` | `tooling.test.ts` | HOLDS (F4) |
 | I7 | Colours and `z-index` come from tokens; no hex colour | `stylelint.js` (`color-no-hex`, `declaration-strict-value`) | `stylelint.test.ts` (13) | HOLDS |
 | I8 | Template ARIA and label rules see through `@meddleware/ui` form components | `eslint.js`, `html-validate.js` | `eslint.test.ts` (11), `html-validate.test.ts` (8) | HOLDS |
@@ -183,7 +183,7 @@ Lockfile, `npm ci`, audit gate in CI and publish, exact `^0.0.x` range for consu
 
 ## Section C — Test-coverage & hermetic/live split
 
-### C.1 Coverage grade — A− (83 tests, 9 files, vitest with a real Chromium, 2026-11-01)
+### C.1 Coverage grade — A− (84 tests, 9 files, vitest with a real Chromium, 2026-11-01)
 
 | Dimension | Assessment |
 | --- | --- |
@@ -251,4 +251,4 @@ All hermetic: pages are `setContent` fixtures; Chromium is the only real browser
 
 ## Re-verification log
 
-- 2026-11-01 — first-pass baseline. Read every module and test; ran `npm ci`, `npm ls --all`, the audit gate (0), type-check, the tests (79 → 83, real Chromium), build and `npm pack --dry-run`; checked the registry (versions, provenance); listed every consumer and its dependency kind from the manifests (all devDependencies); recorded the AAA state (`aaa: 'gate'` in all twelve app/site sweeps). Fixed F1–F3 (0.0.2, unreleased at the time of writing). F6 handed to `OPERATOR_TASKS.md`.
+- 2026-11-01 — first-pass baseline. Read every module and test; ran `npm ci`, `npm ls --all`, the audit gate (0), type-check, the tests (79 → 84, real Chromium), build and `npm pack --dry-run`; checked the registry (versions, provenance); listed every consumer and its dependency kind from the manifests (all devDependencies); recorded the AAA state (`aaa: 'gate'` in all twelve app/site sweeps). Fixed F1–F3 (0.0.2, unreleased at the time of writing). F6 handed to `OPERATOR_TASKS.md`.

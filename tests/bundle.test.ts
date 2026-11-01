@@ -72,6 +72,14 @@ describe('check-prod-bundle CLI', () => {
     expect(run(d, '--also').status).toBe(2)
   })
 
+  it('takes a pattern with --also-regex, and refuses an invalid one', () => {
+    const d = dist({ 'a.js': 'x="E2E"+"a".repeat(41)' })
+    expect(run(d).status).toBe(0)
+    expect(run(d, '--also-regex', '"E2E"\\s*\\+\\s*"a"\\.repeat\\(41\\)').status).toBe(1)
+    expect(run(d, '--also-regex', '(').status).toBe(2)
+    expect(run(d, '--also-regex').status).toBe(2)
+  })
+
   it('is runnable as the package bin', () => {
     expect(execFileSync('node', [CLI, dist({ 'a.js': 'ok' })], { encoding: 'utf8' })).toContain('1 files clean')
   })
