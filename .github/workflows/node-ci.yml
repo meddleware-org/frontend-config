@@ -49,8 +49,8 @@ jobs:
             const j = JSON.parse(require('fs').readFileSync('pack.json', 'utf8'))
             const p = Array.isArray(j) ? j[0] : Object.values(j)[0] // npm 12 keys the report by package name
             const files = p.files.map((f) => f.path)
-            for (const f of ['src/index.js', 'src/browserslist-config.cjs', 'dist/index.d.ts', 'package.json']) if (!files.includes(f)) { console.error('missing from the tarball:', f); process.exit(1) }
-            const stray = files.filter((f) => !/^(src\/|dist\/|package\.json\$|LICENSE\$|README\.md\$|CHANGELOG\.md\$)/.test(f))
+            for (const f of ['src/index.js', 'src/browserslist-config.cjs', 'src/check-prod-bundle.js', 'dist/index.d.ts', 'package.json']) if (!files.includes(f)) { console.error('missing from the tarball:', f); process.exit(1) }
+            const stray = files.filter((f) => !/^(src\/|dist\/|package\.json\$|LICENSE\$|README\.md\$|CHANGELOG\.md\$|SECURITY\.md\$)/.test(f))
             if (stray.length) { console.error('unexpected files in the tarball:', stray); process.exit(1) }
           "
 

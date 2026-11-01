@@ -31,7 +31,46 @@ export async function expectNoRunningAnimations(page) {
 }
 
 /**
- * Tab through the page: every stop is visible and shows a focus indicator (an outline or a shadow), and the tab order ends (no trap).
+ * What the focused element looks like: visible, shows an indicator, and is not hidden behind other content. Runs in the page.
+ * @param {import('@playwright/test').Page} page
+ */
+async function probeFocus(page) {
+  return page.evaluate(() => {
+    const el = document.activeElement
+    if (!el || el === document.body) return null
+    // A visually hidden control (a radio or checkbox inside its label) shows focus on its label, so that is what is checked.
+    const tiny = el.getBoundingClientRect().width < 4 || el.getBoundingClientRect().height < 4
+    const target = tiny ? (el.closest('label') ?? el.parentElement ?? el) : el
+    const box = target.getBoundingClientRect()
+    const shows = (/** @type {Element} */ node) => {
+      const style = getComputedStyle(node)
+      return (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) || style.boxShadow !== 'none'
+    }
+    const indicator = shows(target) || (!tiny && shows(el)) || ['::before', '::after'].some((p) => {
+      const s = getComputedStyle(target, p)
+      return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none'
+    })
+    // WCAG 2.4.11 (focus not obscured): once focus has scrolled the stop into view, it is not entirely hidden behind sticky or fixed
+    // content. Five points are sampled (the centre and four inset corners of the part inside the viewport); hidden means all are covered.
+    const x0 = Math.max(box.left, 0)
+    const x1 = Math.min(box.right, innerWidth)
+    const y0 = Math.max(box.top, 0)
+    const y1 = Math.min(box.bottom, innerHeight)
+    const inView = x1 > x0 && y1 > y0
+    const samples = [[0.5, 0.5], [0.1, 0.1], [0.9, 0.1], [0.1, 0.9], [0.9, 0.9]]
+    const obscured = inView && samples.every(([fx, fy]) => {
+      const top = document.elementFromPoint(x0 + (x1 - x0) * /** @type {number} */ (fx), y0 + (y1 - y0) * /** @type {number} */ (fy))
+      return !!top && !target.contains(top) && !top.contains(target)
+    })
+    const label = `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${el.getAttribute('aria-label') ? `[${el.getAttribute('aria-label')}]` : ''} "${(target.textContent ?? '').trim().slice(0, 24)}"`
+    return { label, visible: box.width > 0 && box.height > 0, indicator, obscured }
+  })
+}
+
+/**
+ * Tab through the page: every stop is visible, shows a focus indicator (an outline or a shadow) and is not hidden behind sticky or fixed
+ * content, and the tab order ends (no trap). Then Shift+Tab back through it, so a stop reached from below is checked as well (browsers
+ * scroll a stop into view from the side it arrives from, so a sticky header or a bottom bar can cover it in only one direction).
  * @param {import('@playwright/test').Page} page
  * @param {{ maxStops?: number }} [options]
  */
@@ -42,24 +81,7 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
   const seen = new Set()
   for (let i = 0; i < maxStops; i++) {
     await page.keyboard.press('Tab')
-    const stop = await page.evaluate(() => {
-      const el = document.activeElement
-      if (!el || el === document.body) return null
-      // A visually hidden control (a radio or checkbox inside its label) shows focus on its label, so that is what is checked.
-      const tiny = el.getBoundingClientRect().width < 4 || el.getBoundingClientRect().height < 4
-      const target = tiny ? (el.closest('label') ?? el.parentElement ?? el) : el
-      const box = target.getBoundingClientRect()
-      const shows = (/** @type {Element} */ node) => {
-        const style = getComputedStyle(node)
-        return (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) || style.boxShadow !== 'none'
-      }
-      const indicator = shows(target) || (!tiny && shows(el)) || ['::before', '::after'].some((p) => {
-        const s = getComputedStyle(target, p)
-        return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none'
-      })
-      const label = `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${el.getAttribute('aria-label') ? `[${el.getAttribute('aria-label')}]` : ''} "${(target.textContent ?? '').trim().slice(0, 24)}"`
-      return { label, visible: box.width > 0 && box.height > 0, indicator }
-    })
+    const stop = await probeFocus(page)
     if (!stop) break // focus left the document: the cycle is complete
     const key = stop.label
     if (seen.has(key) && seen.size > 1 && i > seen.size + 1) break
@@ -67,9 +89,16 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
     stops++
     if (!stop.visible) problems.push(`${stop.label} takes focus but is not visible`)
     if (!stop.indicator) problems.push(`${stop.label} shows no focus indicator`)
+    if (stop.obscured) problems.push(`${stop.label} is hidden behind other content when focused (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
   }
   expect(stops, 'the page has no keyboard stops').toBeGreaterThan(0)
-  expect(problems).toEqual([])
+  for (let i = 0; i < Math.min(stops, maxStops); i++) {
+    await page.keyboard.press('Shift+Tab')
+    const stop = await probeFocus(page)
+    if (!stop) break
+    if (stop.obscured) problems.push(`${stop.label} is hidden behind other content when reached backwards (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
+  }
+  expect([...new Set(problems)]).toEqual([])
 }
 
 /**

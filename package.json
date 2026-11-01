@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/frontend-config",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "Shared frontend tooling for MeddleWare apps: browser support, ESLint, Stylelint, html-validate, PostCSS, Playwright, axe, screenshots, Lighthouse and the Vite target.",
   "license": "0BSD",
@@ -22,7 +22,8 @@
   "files": [
     "src",
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "SECURITY.md"
   ],
   "exports": {
     ".": {
@@ -81,6 +82,10 @@
     "./wallet": {
       "types": "./dist/wallet.d.ts",
       "default": "./src/wallet.js"
+    },
+    "./bundle": {
+      "types": "./dist/bundle.d.ts",
+      "default": "./src/bundle.js"
     }
   },
   "scripts": {
@@ -157,5 +162,8 @@
     "last 2 Samsung versions",
     "Firefox ESR",
     "not dead"
-  ]
+  ],
+  "bin": {
+    "check-prod-bundle": "./src/check-prod-bundle.js"
+  }
 }

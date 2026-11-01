@@ -26,6 +26,8 @@ Shared frontend tooling, one subpath export per concern (see README). Source is 
   harmlessly. Add to the list only with the same reasoning.
 - **`eslint-config` keeps its own invariant.** `@meddleware/eslint-config` declares no plugins; the Vue/TypeScript/a11y/compat plugins
   live here. `vueApp` only re-exports its `suiBoundary()` behind `sui: true`.
+- **The e2e harness never ships.** `check-prod-bundle` (`src/bundle.js`) fails when a production `dist/` contains the mock-wallet hooks; a new
+  hook added to `@meddleware/wallet-adapter/testing` must be added to `E2E_MARKERS` in the same change.
 - **Every export is proven by a test** in both directions (the violation is reported, the allowed form is not). The axe helper
   test drives a real Chromium.
 
