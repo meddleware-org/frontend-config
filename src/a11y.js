@@ -90,8 +90,13 @@ async function probeFocus(page) {
       return !!top && !target.contains(top) && !top.contains(target)
     })
     const coveredBy = obscured && cover ? `${/** @type {Element} */ (cover).tagName.toLowerCase()}${/** @type {Element} */ (cover).id ? `#${/** @type {Element} */ (cover).id}` : ''}${/** @type {Element} */ (cover).className && typeof (/** @type {Element} */ (cover).className) === 'string' ? `.${String(/** @type {Element} */ (cover).className).trim().split(/\s+/).slice(0, 2).join('.')}` : ''}` : ''
+    // The walk is complete when focus comes back to an element it has already stopped on: elements are compared by identity (two links can
+    // share a label, as the same link often appears in a menu and in a sidebar), through a set the walk resets at its start.
+    const seen = /** @type {{ __mwSeen?: WeakSet<Element> }} */ (/** @type {unknown} */ (window)).__mwSeen
+    const repeat = !!seen && seen.has(el)
+    seen?.add(el)
     const label = `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${el.getAttribute('aria-label') ? `[${el.getAttribute('aria-label')}]` : ''} "${(target.textContent ?? '').trim().slice(0, 24)}"`
-    return { label, visible: box.width > 0 && box.height > 0, indicator, obscured, coveredBy }
+    return { label, visible: box.width > 0 && box.height > 0, indicator, obscured, coveredBy, repeat }
   })
 }
 
@@ -104,6 +109,7 @@ async function startAtTop(page) {
   // The pointer where an earlier click left it would keep a hover tooltip open over the controls the keyboard walk is about to reach.
   await page.mouse.move(0, 0)
   await page.evaluate(() => {
+    ;/** @type {{ __mwSeen?: WeakSet<Element> }} */ (/** @type {unknown} */ (window)).__mwSeen = new WeakSet()
     const active = document.activeElement
     if (active instanceof HTMLElement && active !== document.body) active.blur()
     const selection = getSelection()
@@ -123,12 +129,12 @@ async function startAtTop(page) {
  * @param {import('@playwright/test').Page} page
  * @param {{ maxStops?: number }} [options]
  */
-export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) {
+export async function expectKeyboardFocusVisible(page, { maxStops = 300 } = {}) {
   /** @type {string[]} */
   const problems = []
   let stops = 0
   let wrapped = false
-  const seen = new Set()
+  let finished = false
   await startAtTop(page)
   for (let i = 0; i < maxStops; i++) {
     await page.keyboard.press('Tab')
@@ -140,17 +146,21 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
         wrapped = true
         continue
       }
+      finished = true
       break
     }
-    const key = stop.label
-    if (seen.has(key) && seen.size > 1 && i > seen.size + 1) break
-    seen.add(key)
+    if (stop.repeat) {
+      finished = true // back at a stop already seen: a focus cycle (a modal dialog holds focus inside itself), so the walk is complete
+      break
+    }
     stops++
     if (!stop.visible) problems.push(`${stop.label} takes focus but is not visible`)
     if (!stop.indicator) problems.push(`${stop.label} shows no focus indicator`)
     if (stop.obscured) problems.push(`${stop.label} is hidden behind ${stop.coveredBy || 'other content'} when focused (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
   }
   expect(stops, 'the page has no keyboard stops').toBeGreaterThan(0)
+  // A walk that hit its cap has not seen the rest of the page: say so instead of passing it.
+  if (!finished) problems.push(`the tab order has more than ${maxStops} stops, so the rest of the page was not checked (raise maxStops for this state)`)
   for (let i = 0; i < Math.min(stops, maxStops); i++) {
     await page.keyboard.press('Shift+Tab')
     const stop = await probeFocus(page)
@@ -162,11 +172,11 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
 
 /**
  * @param {Record<string, State>} states Opens each state of the app (navigates, mocks, opens the dialog).
- * @param {{ aaa?: 'gate' | 'report' | 'off', noKeyboard?: string[] }} [options] How WCAG AAA findings are treated (default `report`; a repo
+ * @param {{ aaa?: 'gate' | 'report' | 'off', noKeyboard?: string[], maxStops?: number }} [options] How WCAG AAA findings are treated (default `report`; a repo
  *   moves to `gate` in the release that clears them); `noKeyboard` names states with nothing to operate (a static summary, a modal that
- *   only reports progress), which skip the keyboard pass: every other state must have at least one keyboard stop.
+ *   only reports progress), which skip the keyboard pass: every other state must have at least one keyboard stop; `maxStops` (default 300) caps the keyboard walk, and a page with more stops fails rather than passing unchecked.
  */
-export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [] } = {}) {
+export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [], maxStops } = {}) {
   for (const [name, state] of Object.entries(states)) {
     const open = typeof state === 'function' ? state : state.open
     const disableRules = typeof state === 'function' ? [] : (state.disableRules ?? [])
@@ -214,7 +224,7 @@ export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [] } = {}
       if (!noKeyboard.includes(name)) {
         test('can be used from the keyboard, and shows where focus is', async ({ page }) => {
           await open(page)
-          await expectKeyboardFocusVisible(page)
+          await expectKeyboardFocusVisible(page, maxStops ? { maxStops } : {})
         })
       }
     })

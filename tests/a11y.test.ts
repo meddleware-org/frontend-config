@@ -97,6 +97,21 @@ describe('expectKeyboardFocusVisible', () => {
     await expect(expectKeyboardFocusVisible(bad)).rejects.toThrow(/no focus indicator/)
   })
 
+  it('does not end the walk at a repeated label: two links with the same text are two stops', async () => {
+    const css = 'a { outline: 2px solid blue; display: block; width: 100px; margin-bottom: 8px } #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 80px; background: #ccc }'
+    // "Guide" appears several times (a menu, a sidebar and an outline, as on a VitePress page); the link that matters comes after them and is
+    // covered. (The old walk stopped at the second repeated label, so it never reached it.)
+    const page = await open('<a href="#a">Guide</a><a href="#b">Guide</a><a href="#d">Guide</a><a href="#e">Guide</a><a href="#f">Guide</a><div style="height:300px"></div><a href="#c" style="margin-bottom:0">Legal</a><div id="bar">bar</div>', css)
+    await page.setViewportSize({ width: 400, height: 380 })
+    await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/Legal.*hidden behind/)
+  })
+
+  it('fails a page with more stops than the cap instead of passing the rest unchecked', async () => {
+    const page = await open('<a href="#1">a</a><a href="#2">b</a><a href="#3">c</a><a href="#4">d</a>', 'a, button { outline: 2px solid blue }')
+    await expect(expectKeyboardFocusVisible(page, { maxStops: 3 })).rejects.toThrow(/more than 3 stops/)
+    await expectKeyboardFocusVisible(page, { maxStops: 6 })
+  })
+
   it('fails when there is nothing to tab to', async () => {
     await expect(expectKeyboardFocusVisible(await open('<p>text only</p>'))).rejects.toThrow(/no keyboard stops/)
   })
