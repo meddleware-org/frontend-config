@@ -74,6 +74,15 @@ describe('expectKeyboardFocusVisible', () => {
     })
   })
 
+  it('counts the stops of a page whose focus starts on its last control (the first Tab only wraps)', async () => {
+    const page = await open('<a href="#a">one</a><button id="last">two</button>', 'a, button { outline: 2px solid blue }')
+    await page.focus('#last')
+    await expectKeyboardFocusVisible(page)
+    const bad = await open('<a href="#a">one</a><button id="last">two</button>', 'button:focus { outline: none }')
+    await bad.focus('#last')
+    await expect(expectKeyboardFocusVisible(bad)).rejects.toThrow(/no focus indicator/)
+  })
+
   it('fails when there is nothing to tab to', async () => {
     await expect(expectKeyboardFocusVisible(await open('<p>text only</p>'))).rejects.toThrow(/no keyboard stops/)
   })

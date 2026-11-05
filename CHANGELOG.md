@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `expectKeyboardFocusVisible` (and so `defineA11ySuite`) now also fails a stop that is entirely hidden behind sticky or fixed content when it
   takes focus (WCAG 2.4.11 focus not obscured; axe has no rule for it), going forward and then backwards through the tab order.
 
+- `defineA11ySuite` takes `noKeyboard: [state names]` for states with nothing to operate (they skip the keyboard pass; every other state must
+  have a stop). `expectKeyboardFocusVisible` no longer reports "no keyboard stops" for a page reached with focus on its last control.
+
 ### Changed
 
 - `SECURITY.md` is part of the published files.

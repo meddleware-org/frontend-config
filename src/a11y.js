@@ -78,11 +78,20 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
   /** @type {string[]} */
   const problems = []
   let stops = 0
+  let wrapped = false
   const seen = new Set()
   for (let i = 0; i < maxStops; i++) {
     await page.keyboard.press('Tab')
     const stop = await probeFocus(page)
-    if (!stop) break // focus left the document: the cycle is complete
+    if (!stop) {
+      // Focus left the document: the cycle is complete. But a page that is reached with focus already on its last control (a button just
+      // clicked) leaves on the first Tab, before any stop was seen: that press only wraps round to the start.
+      if (stops === 0 && !wrapped) {
+        wrapped = true
+        continue
+      }
+      break
+    }
     const key = stop.label
     if (seen.has(key) && seen.size > 1 && i > seen.size + 1) break
     seen.add(key)
@@ -103,10 +112,11 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
 
 /**
  * @param {Record<string, State>} states Opens each state of the app (navigates, mocks, opens the dialog).
- * @param {{ aaa?: 'gate' | 'report' | 'off' }} [options] How WCAG AAA findings are treated (default `report`; a repo moves to `gate`
- *   in the release that clears them).
+ * @param {{ aaa?: 'gate' | 'report' | 'off', noKeyboard?: string[] }} [options] How WCAG AAA findings are treated (default `report`; a repo
+ *   moves to `gate` in the release that clears them); `noKeyboard` names states with nothing to operate (a static summary, a modal that
+ *   only reports progress), which skip the keyboard pass: every other state must have at least one keyboard stop.
  */
-export function defineA11ySuite(states, { aaa = 'report' } = {}) {
+export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [] } = {}) {
   for (const [name, open] of Object.entries(states)) {
     test.describe(name, () => {
       test.beforeEach(async ({ page }) => {
@@ -149,10 +159,12 @@ export function defineA11ySuite(states, { aaa = 'report' } = {}) {
         await expectNoRunningAnimations(page)
       })
 
-      test('can be used from the keyboard, and shows where focus is', async ({ page }) => {
-        await open(page)
-        await expectKeyboardFocusVisible(page)
-      })
+      if (!noKeyboard.includes(name)) {
+        test('can be used from the keyboard, and shows where focus is', async ({ page }) => {
+          await open(page)
+          await expectKeyboardFocusVisible(page)
+        })
+      }
     })
   }
 }
