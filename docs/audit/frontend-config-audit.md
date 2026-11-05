@@ -57,7 +57,7 @@ In scope: `src/*.js` (15 modules and the `.cjs` browserslist), `tests/*.ts` (9 f
 
 Out of scope: how each consumer configures and overrides the helpers (each consumer's audit), the design tokens, the third-party tools themselves.
 
-Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`; `node .github/audit-gate.mjs` (0 high/critical); `npm run type-check`; `npx vitest run` (9 files, 85 tests with a real Chromium; 79 before the fixes); `npm run build`; `npm pack --dry-run --json`; `npm view @meddleware/frontend-config versions dist.attestations.provenance`.
+Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`; `node .github/audit-gate.mjs` (0 high/critical); `npm run type-check`; `npx vitest run` (9 files, 86 tests with a real Chromium; 79 before the fixes); `npm run build`; `npm pack --dry-run --json`; `npm view @meddleware/frontend-config versions dist.attestations.provenance`.
 
 ## Findings
 
@@ -73,7 +73,7 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 **Where:** `src/a11y.js::expectKeyboardFocusVisible` (used by `defineA11ySuite`).
 **Issue:** the helper verified that each Tab stop is visible and shows an outline or shadow. WCAG 2.2 SC 2.4.11 (AA) requires a focused element not to be entirely hidden by author-created content such as a sticky header; axe has no rule for it, and D104 recorded a real instance (a sticky header needing `scroll-padding-block-start`). The audit claims "focus not obscured" would have been unproven.
 **Impact:** keyboard and screen-magnifier users lose track of focus; a regression in sticky chrome would pass CI.
-**Remediation / evidence:** each stop is probed with `elementFromPoint` at five points (centre and four inset corners of the part inside the viewport); hidden means all five are covered by something that neither contains nor is contained by the stop. The walk runs forward, then Shift+Tab backward over the same stops (a browser scrolls a stop into view from the side it arrives from). Problems name the stop and the rule. Tests (Chromium): a stop under a fixed bar fails; a stop covered when reached backwards fails; a partly covered stop passes; a stop inside the layer on top (a dialog's own control) passes. Writing the first consumer spec that uses the suite on a widget (walrus-storage-kit) exposed a second defect in the same helper: a page reached with focus already on its last control left the document on the first Tab and counted "no keyboard stops"; the first press now only wraps. `defineA11ySuite` also takes `noKeyboard: [state names]` for states with nothing to operate (a static summary, a progress-only modal): they skip the keyboard pass, every other state must have a stop. Limits: the check sees a covered stop, not its *reading order*; Chrome centres an off-screen target, so a sticky header is caught mostly through static overlaps — a scroll-dependent case needs WebKit/Firefox, which the five-project CI run provides. 0.0.2.
+**Remediation / evidence:** each stop is probed with `elementFromPoint` at five points (centre and four inset corners of the part inside the viewport); hidden means all five are covered by something that neither contains nor is contained by the stop. The walk runs forward, then Shift+Tab backward over the same stops (a browser scrolls a stop into view from the side it arrives from). Problems name the stop, the rule and the element that covers it (`hidden behind header.mw-header`), and the walk first moves the pointer out of the way (a pointer an earlier click left over a hover tooltip kept it open over the controls — met in Firefox on token-issuance-ui). Tests (Chromium): a stop under a fixed bar fails; a stop covered when reached backwards fails; a partly covered stop passes; a stop inside the layer on top (a dialog's own control) passes. Writing the first consumer spec that uses the suite on a widget (walrus-storage-kit) exposed a second defect in the same helper: a page reached with focus already on its last control left the document on the first Tab and counted "no keyboard stops"; the first press now only wraps; the keyboard pass now starts at the top of the document with the pointer parked. `defineA11ySuite` also takes `noKeyboard: [state names]` for states with nothing to operate (a static summary, a progress-only modal): they skip the keyboard pass, every other state must have a stop. Limits: the check sees a covered stop, not its *reading order*; Chrome centres an off-screen target, so a sticky header is caught mostly through static overlaps — a scroll-dependent case needs WebKit/Firefox, which the five-project CI run provides. 0.0.2.
 
 ### F3 — `SECURITY.md` not published
 **Severity:** Low   **Disposition:** RESOLVED
@@ -126,7 +126,7 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 | --- | --- | --- | --- | --- |
 | I1 | One browser support promise drives prefixing, both compat lints and the Vite target | `browserslist-config.cjs`, `postcss.js`, `stylelint.js`, `eslint.js`, `vite.js` | `browserslist.test.ts`, `tooling.test.ts` | HOLDS |
 | I2 | WCAG 2.2 A/AA is always a hard gate; AAA is `report` / `gate` / `off` by option | `axe.js`, `index.js` tags | `axe.test.ts` (5, real Chromium) | HOLDS |
-| I3 | The sweep covers reflow at 320 px, 200% text, forced colours, reduced motion, keyboard and focus-not-obscured | `a11y.js` | `a11y.test.ts` (11) | HOLDS (F2) |
+| I3 | The sweep covers reflow at 320 px, 200% text, forced colours, reduced motion, keyboard and focus-not-obscured | `a11y.js` | `a11y.test.ts` (12) | HOLDS (F2) |
 | I4 | Every look (theme × season; viewports) is shared by screenshots and sweeps | `look.js` | `tooling.test.ts` | HOLDS |
 | I5 | A production `dist/` containing the e2e harness fails the check | `bundle.js`, `check-prod-bundle.js` | `bundle.test.ts` (10) | HOLDS (F1) |
 | I6 | `VITE_E2E` in a non-e2e mode fails a build | `vite.js::assertE2eOnlyInE2eMode` | `tooling.test.ts` | HOLDS (F4) |
@@ -183,7 +183,7 @@ Lockfile, `npm ci`, audit gate in CI and publish, exact `^0.0.x` range for consu
 
 ## Section C — Test-coverage & hermetic/live split
 
-### C.1 Coverage grade — A− (85 tests, 9 files, vitest with a real Chromium, 2026-11-01)
+### C.1 Coverage grade — A− (86 tests, 9 files, vitest with a real Chromium, 2026-11-01)
 
 | Dimension | Assessment |
 | --- | --- |
@@ -251,4 +251,4 @@ All hermetic: pages are `setContent` fixtures; Chromium is the only real browser
 
 ## Re-verification log
 
-- 2026-11-01 — first-pass baseline. Read every module and test; ran `npm ci`, `npm ls --all`, the audit gate (0), type-check, the tests (79 → 85, real Chromium), build and `npm pack --dry-run`; checked the registry (versions, provenance); listed every consumer and its dependency kind from the manifests (all devDependencies); recorded the AAA state (`aaa: 'gate'` in all twelve app/site sweeps). Fixed F1–F3 (0.0.2, unreleased at the time of writing). F6 handed to `OPERATOR_TASKS.md`.
+- 2026-11-01 — first-pass baseline. Read every module and test; ran `npm ci`, `npm ls --all`, the audit gate (0), type-check, the tests (79 → 86, real Chromium), build and `npm pack --dry-run`; checked the registry (versions, provenance); listed every consumer and its dependency kind from the manifests (all devDependencies); recorded the AAA state (`aaa: 'gate'` in all twelve app/site sweeps). Fixed F1–F3 (0.0.2, unreleased at the time of writing). F6 handed to `OPERATOR_TASKS.md`.
