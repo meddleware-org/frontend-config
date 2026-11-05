@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The keyboard walk follows element identity (a repeated link label no longer ends it early), stops at 300 stops and fails when it is capped (`maxStops` raises the cap); its test limit scales with the cap (WebKit needs about half a minute for a page of a hundred stops).
 - `SECURITY.md` is part of the published files.
 
 ## [0.0.1] - 2026-10-31

@@ -223,6 +223,9 @@ export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [], maxSt
 
       if (!noKeyboard.includes(name)) {
         test('can be used from the keyboard, and shows where focus is', async ({ page }) => {
+          // The walk probes every stop twice (forward, then backward), and WebKit animates the scroll each one causes: a page of a
+          // hundred stops takes about half a minute there, longer than the default 30 s. Scale the limit with the cap.
+          test.setTimeout(Math.max(60_000, (maxStops || 300) * 400))
           await open(page)
           await expectKeyboardFocusVisible(page, maxStops ? { maxStops } : {})
         })
