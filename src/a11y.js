@@ -36,6 +36,27 @@ export async function expectNoRunningAnimations(page) {
  * @param {import('@playwright/test').Page} page
  */
 async function probeFocus(page) {
+  // A browser may animate the scroll that brings the focused control into view (WebKit does, and `scroll-behavior: smooth` makes the
+  // others): judge where it comes to rest, not where it passes through.
+  await page.evaluate(
+    () =>
+      new Promise((done) => {
+        let last = [scrollX, scrollY]
+        let still = 0
+        let frames = 0
+        const tick = () => {
+          const now = [scrollX, scrollY]
+          if (now[0] === last[0] && now[1] === last[1]) still++
+          else {
+            still = 0
+            last = now
+          }
+          if (still >= 3 || ++frames > 60) done(undefined)
+          else requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }),
+  )
   return page.evaluate(() => {
     const el = document.activeElement
     // Once Tab has left the last control, Firefox hands focus to the browser's own chrome: the document no longer has focus, yet

@@ -70,6 +70,13 @@ describe('expectKeyboardFocusVisible', () => {
       await expectKeyboardFocusVisible(page)
     })
 
+    it('judges where an animated scroll comes to rest, not where it passes through', async () => {
+      const filler = '<div style="height:1200px">filler</div>'
+      const css = 'html { scroll-behavior: smooth; scroll-padding-top: 130px } header { position: sticky; top: 0; height: 100px; background: #ccc } a { outline: 2px solid blue; display: block; width: 100px; margin-bottom: 8px }'
+      const page = await open(`<header>site</header><a href="#a">one</a>${filler}<a href="#b">two</a>${filler}<a href="#c">three</a>`, css)
+      await expectKeyboardFocusVisible(page)
+    })
+
     it('passes a stop that is only partly covered (2.4.11 asks for not entirely hidden)', async () => {
       const page = await open(`<a href="#a" style="width:300px">wide link</a>${bar('left:0;top:0;width:60px;height:600px')}`, ring.replace('width: 100px', 'width: 300px'))
       await expectKeyboardFocusVisible(page)
