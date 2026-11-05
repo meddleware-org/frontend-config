@@ -54,13 +54,20 @@ describe('expectKeyboardFocusVisible', () => {
 
     it('fails a stop that a fixed bar covers entirely, going forward', async () => {
       const page = await open(`<a href="#a">one</a><a href="#b">two</a>${bar('left:0;right:0;top:0;height:80px')}`, ring)
-      await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/hidden behind other content when focused/)
+      await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/hidden behind div\.?.* when focused/)
     })
 
     it('fails a stop that sticky chrome covers, reached backwards', async () => {
       const filler = '<div style="height:1500px">filler</div>'
       const page = await open(`${filler}<a href="#a">one</a>${bar('left:0;right:0;bottom:0;height:600px;pointer-events:auto')}`, ring)
-      await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/hidden behind other content/)
+      await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/hidden behind div.* when (focused|reached backwards)/)
+    })
+
+    it('ignores a tooltip that a stale pointer position would keep open (the pointer is parked first)', async () => {
+      const css = 'a { outline: 2px solid blue; display: block; width: 100px; height: 30px; margin-bottom: 8px } #tip { display: none; position: fixed; left: 0; top: 0; width: 400px; height: 300px; background: #ccc } #one:hover ~ #tip { display: block }'
+      const page = await open('<a id="one" href="#a">one</a><a href="#b">two</a><div id="tip">tip</div>', css)
+      await page.mouse.move(40, 25) // over the first link: its tip opens and covers both
+      await expectKeyboardFocusVisible(page)
     })
 
     it('passes a stop that is only partly covered (2.4.11 asks for not entirely hidden)', async () => {

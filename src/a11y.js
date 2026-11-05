@@ -61,21 +61,27 @@ async function probeFocus(page) {
     const y1 = Math.min(box.bottom, innerHeight)
     const inView = x1 > x0 && y1 > y0
     const samples = [[0.5, 0.5], [0.1, 0.1], [0.9, 0.1], [0.1, 0.9], [0.9, 0.9]]
+    /** @type {Element | null} */
+    let cover = null
     const obscured = inView && samples.every(([fx, fy]) => {
       const top = document.elementFromPoint(x0 + (x1 - x0) * /** @type {number} */ (fx), y0 + (y1 - y0) * /** @type {number} */ (fy))
+      cover = top
       return !!top && !target.contains(top) && !top.contains(target)
     })
+    const coveredBy = obscured && cover ? `${/** @type {Element} */ (cover).tagName.toLowerCase()}${/** @type {Element} */ (cover).id ? `#${/** @type {Element} */ (cover).id}` : ''}${/** @type {Element} */ (cover).className && typeof (/** @type {Element} */ (cover).className) === 'string' ? `.${String(/** @type {Element} */ (cover).className).trim().split(/\s+/).slice(0, 2).join('.')}` : ''}` : ''
     const label = `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${el.getAttribute('aria-label') ? `[${el.getAttribute('aria-label')}]` : ''} "${(target.textContent ?? '').trim().slice(0, 24)}"`
-    return { label, visible: box.width > 0 && box.height > 0, indicator, obscured }
+    return { label, visible: box.width > 0 && box.height > 0, indicator, obscured, coveredBy }
   })
 }
 
 /**
- * Put the keyboard at the start of the document: nothing focused, and the point sequential navigation continues from at the top (a
- * button that was just clicked is where the next Tab would otherwise start).
+ * Put the keyboard at the start of the document: nothing focused, the pointer out of the way, and the point sequential navigation continues
+ * from at the top (a button that was just clicked is where the next Tab would otherwise start).
  * @param {import('@playwright/test').Page} page
  */
 async function startAtTop(page) {
+  // The pointer where an earlier click left it would keep a hover tooltip open over the controls the keyboard walk is about to reach.
+  await page.mouse.move(0, 0)
   await page.evaluate(() => {
     const active = document.activeElement
     if (active instanceof HTMLElement && active !== document.body) active.blur()
@@ -121,14 +127,14 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
     stops++
     if (!stop.visible) problems.push(`${stop.label} takes focus but is not visible`)
     if (!stop.indicator) problems.push(`${stop.label} shows no focus indicator`)
-    if (stop.obscured) problems.push(`${stop.label} is hidden behind other content when focused (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
+    if (stop.obscured) problems.push(`${stop.label} is hidden behind ${stop.coveredBy || 'other content'} when focused (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
   }
   expect(stops, 'the page has no keyboard stops').toBeGreaterThan(0)
   for (let i = 0; i < Math.min(stops, maxStops); i++) {
     await page.keyboard.press('Shift+Tab')
     const stop = await probeFocus(page)
     if (!stop) break
-    if (stop.obscured) problems.push(`${stop.label} is hidden behind other content when reached backwards (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
+    if (stop.obscured) problems.push(`${stop.label} is hidden behind ${stop.coveredBy || 'other content'} when reached backwards (WCAG 2.4.11: add scroll-padding for sticky chrome)`)
   }
   expect([...new Set(problems)]).toEqual([])
 }
