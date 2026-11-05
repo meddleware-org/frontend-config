@@ -101,7 +101,7 @@ describe('expectKeyboardFocusVisible', () => {
     const css = 'a { outline: 2px solid blue; display: block; width: 100px; margin-bottom: 8px } #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 80px; background: #ccc }'
     // "Guide" appears several times (a menu, a sidebar and an outline, as on a VitePress page); the link that matters comes after them and is
     // covered. (The old walk stopped at the second repeated label, so it never reached it.)
-    const page = await open('<a href="#a">Guide</a><a href="#b">Guide</a><a href="#d">Guide</a><a href="#e">Guide</a><a href="#f">Guide</a><div style="height:300px"></div><a href="#c" style="margin-bottom:0">Legal</a><div id="bar">bar</div>', css)
+    const page = await open('<a href="#a">Guide</a><a href="#b">Intro</a><a href="#d">Guide</a><a href="#e">Intro</a><a href="#f">Guide</a><a href="#g">Intro</a><div style="height:300px"></div><a href="#c" style="margin-bottom:0">Legal</a><div id="bar">bar</div>', css)
     await page.setViewportSize({ width: 400, height: 380 })
     await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/Legal.*hidden behind/)
   })
