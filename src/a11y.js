@@ -9,7 +9,8 @@ import { expect, test } from '@playwright/test'
 import { expectAccessible } from './axe.js'
 import { applyLook, looks, offline } from './look.js'
 
-/** @typedef {(page: import('@playwright/test').Page) => Promise<void>} State */
+/** @typedef {(page: import('@playwright/test').Page) => Promise<void>} Open */
+/** @typedef {Open | { open: Open, disableRules?: string[] }} State A state is how to open it, or that and the axe rules that do not apply to it (a lone dialog has no landmarks). */
 
 /**
  * The page has no horizontal scroll: nothing is wider than the viewport (WCAG 1.4.10 reflow, and 1.4.4 at a larger text size).
@@ -37,7 +38,9 @@ export async function expectNoRunningAnimations(page) {
 async function probeFocus(page) {
   return page.evaluate(() => {
     const el = document.activeElement
-    if (!el || el === document.body) return null
+    // Once Tab has left the last control, Firefox hands focus to the browser's own chrome: the document no longer has focus, yet
+    // `activeElement` still names the control it left. That is the end of the tab order, not a stop.
+    if (!el || el === document.body || !document.hasFocus()) return null
     // A visually hidden control (a radio or checkbox inside its label) shows focus on its label, so that is what is checked.
     const tiny = el.getBoundingClientRect().width < 4 || el.getBoundingClientRect().height < 4
     const target = tiny ? (el.closest('label') ?? el.parentElement ?? el) : el
@@ -68,6 +71,25 @@ async function probeFocus(page) {
 }
 
 /**
+ * Put the keyboard at the start of the document: nothing focused, and the point sequential navigation continues from at the top (a
+ * button that was just clicked is where the next Tab would otherwise start).
+ * @param {import('@playwright/test').Page} page
+ */
+async function startAtTop(page) {
+  await page.evaluate(() => {
+    const active = document.activeElement
+    if (active instanceof HTMLElement && active !== document.body) active.blur()
+    const selection = getSelection()
+    if (!selection) return
+    selection.removeAllRanges()
+    const range = document.createRange()
+    range.setStart(document.body, 0)
+    range.collapse(true)
+    selection.addRange(range)
+  })
+}
+
+/**
  * Tab through the page: every stop is visible, shows a focus indicator (an outline or a shadow) and is not hidden behind sticky or fixed
  * content, and the tab order ends (no trap). Then Shift+Tab back through it, so a stop reached from below is checked as well (browsers
  * scroll a stop into view from the side it arrives from, so a sticky header or a bottom bar can cover it in only one direction).
@@ -80,6 +102,7 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
   let stops = 0
   let wrapped = false
   const seen = new Set()
+  await startAtTop(page)
   for (let i = 0; i < maxStops; i++) {
     await page.keyboard.press('Tab')
     const stop = await probeFocus(page)
@@ -117,7 +140,9 @@ export async function expectKeyboardFocusVisible(page, { maxStops = 120 } = {}) 
  *   only reports progress), which skip the keyboard pass: every other state must have at least one keyboard stop.
  */
 export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [] } = {}) {
-  for (const [name, open] of Object.entries(states)) {
+  for (const [name, state] of Object.entries(states)) {
+    const open = typeof state === 'function' ? state : state.open
+    const disableRules = typeof state === 'function' ? [] : (state.disableRules ?? [])
     test.describe(name, () => {
       test.beforeEach(async ({ page }) => {
         await offline(page)
@@ -128,7 +153,7 @@ export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [] } = {}
           await page.emulateMedia({ colorScheme: /** @type {'light' | 'dark'} */ (theme), reducedMotion: 'reduce' })
           await open(page)
           await applyLook(page, theme, season)
-          await expectAccessible(page, { aaa })
+          await expectAccessible(page, { aaa, disableRules })
         })
       }
 
@@ -136,21 +161,21 @@ export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [] } = {}
         await page.setViewportSize({ width: 320, height: 640 })
         await open(page)
         await expectNoHorizontalScroll(page)
-        await expectAccessible(page, { aaa: 'off' })
+        await expectAccessible(page, { aaa: 'off', disableRules })
       })
 
       test('holds at 200% text size', async ({ page }) => {
         await open(page)
         await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
         await expectNoHorizontalScroll(page)
-        await expectAccessible(page, { aaa: 'off' })
+        await expectAccessible(page, { aaa: 'off', disableRules })
       })
 
       test('works in forced colours', async ({ page }) => {
         await page.emulateMedia({ forcedColors: 'active' })
         await open(page)
         // The browser chooses the colours in forced-colours mode, so axe's contrast arithmetic on the declared ones does not apply.
-        await expectAccessible(page, { aaa: 'off', disableRules: ['color-contrast'] })
+        await expectAccessible(page, { aaa: 'off', disableRules: [...disableRules, 'color-contrast'] })
       })
 
       test('holds still with reduced motion', async ({ page }) => {

@@ -98,7 +98,7 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 ### F6 — Placeholder npm versions
 **Severity:** Info   **Disposition:** DEFERRED
 **Where:** npm — `0.0.0-rename.0`, `0.0.0-stage`.
-**Remediation / evidence:** deprecate both, pointing at the current version (credentialed npm action): `OPERATOR_TASKS.md`, npm housekeeping. Not a mainnet gate.
+**Remediation / evidence:** deprecate them (credentialed npm action): `OPERATOR_TASKS.md`, npm housekeeping item 3, with the exact command and the list of all eighteen packages. Cosmetic; not a mainnet gate.
 
 ### F7 — `defineA11ySuite` and `defineShots` are exercised by consumers, not by this repo's tests
 **Severity:** Info   **Disposition:** ADJUDICATED
