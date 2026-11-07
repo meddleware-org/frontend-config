@@ -175,6 +175,7 @@
     "mw-audit-gate": "./src/audit-gate.js",
     "mw-third-party-licenses": "./src/third-party-licenses.js",
     "mw-check-csp-inline": "./src/check-csp-inline.js",
-    "mw-sync": "./src/sync.js"
+    "mw-sync": "./src/sync.js",
+    "mw-network-status": "./src/network-status.js"
   }
 }
