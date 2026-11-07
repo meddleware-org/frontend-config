@@ -43,6 +43,14 @@ describe('mw-network-status', () => {
     const r = spawnSync('node', [cli], { cwd: d, encoding: 'utf8' })
     expect(JSON.parse(r.stdout).seen['access gate']).toContain('mainnet')
   })
+  it('--check passes on a current file and fails on a stale or missing one', () => {
+    const d = repo(false)
+    expect(spawnSync('node', [cli, '--check', 'network.json'], { cwd: d, encoding: 'utf8' }).status).toBe(1)
+    spawnSync('node', [cli, '--out', 'network.json'], { cwd: d })
+    expect(spawnSync('node', [cli, '--check', 'network.json'], { cwd: d, encoding: 'utf8' }).status).toBe(0)
+    writeFileSync(join(d, 'node_modules/@meddleware/access-gate-client/index.js'), 'export const ACCESS_GATE_DEPLOYMENTS = { testnet: {}, mainnet: {} }')
+    expect(spawnSync('node', [cli, '--check', 'network.json'], { cwd: d, encoding: 'utf8' }).status).toBe(1)
+  })
   it('fails when a client is not installed', () => {
     const d = mkdtempSync(join(tmpdir(), 'ns-'))
     dirs.push(d)

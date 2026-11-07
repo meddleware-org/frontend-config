@@ -4,10 +4,12 @@
 // site (landing page, docs, developer docs) says "mainnet is coming" until the records have a `mainnet` key and says "live" the moment they do.
 //
 //   mw-network-status [--out src/network.json]     (default: print to stdout)
+//   mw-network-status --check src/network.json     fail (exit 1) when the committed file differs from the records
 //
-// Run it from the repository root before the build (a `prebuild` script). The repository needs `@meddleware/web-utils` and the two clients
+// The file is committed, so the page and its tests never depend on a hidden build step; CI runs `--check`, and bumping a client package
+// (Dependabot, or a release that adds a mainnet record) fails the check until the file is regenerated with `--out`. The repository needs `@meddleware/web-utils` and the two clients
 // (`@meddleware/access-gate-client`, `@meddleware/sealed-storage-client`) installed; it fails when one is missing rather than guess.
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -30,13 +32,26 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const args = process.argv.slice(2)
   const outIndex = args.indexOf('--out')
   const out = outIndex >= 0 ? args[outIndex + 1] : undefined
+  const checkIndex = args.indexOf('--check')
+  const check = checkIndex >= 0 ? args[checkIndex + 1] : undefined
   try {
     const utils = await load('@meddleware/web-utils')
     const gate = await load('@meddleware/access-gate-client')
     const sealed = await load('@meddleware/sealed-storage-client')
     const status = networkStatus(utils, { 'access gate': gate.ACCESS_GATE_DEPLOYMENTS, 'sealed storage': sealed.SEAL_POLICIES_DEPLOYMENTS })
     const json = JSON.stringify(status, null, 2) + '\n'
-    if (out) writeFileSync(out, json)
+    if (check) {
+      let have = ''
+      try {
+        have = readFileSync(check, 'utf8')
+      } catch {
+        // missing counts as different
+      }
+      if (have !== json) {
+        console.error(`mw-network-status: ${check} is out of date with the deployment records; run \`mw-network-status --out ${check}\``)
+        process.exit(1)
+      }
+    } else if (out) writeFileSync(out, json)
     else process.stdout.write(json)
   } catch (err) {
     console.error(`mw-network-status: ${err instanceof Error ? err.message : String(err)}`)
