@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mw-audit-gate`, `mw-third-party-licenses` and `mw-check-csp-inline`: the dependency-audit gate, the licence bundle and the inline-script
   CSP check that every app repository carried as its own copy of a script.
 - `/csp`: `buildCsp`, `cspForProfile` and six named profiles that reproduce, byte for byte, the policies the app images served.
+- `meddlewareApp` (`/vite`), `vueTestConfig` (`/vitest`) and `tsconfig/vue-app.json`: the Vite, Vitest and TypeScript configuration that eleven
+  apps each repeated.
 - `mw-sync --check|--write` and `templates/`: the files that cannot be shared by reference stay identical across repositories, and the
   Dockerfile's `ARG CSP` is held equal to the repository's profile.
 

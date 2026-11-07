@@ -24,7 +24,8 @@
     "dist",
     "CHANGELOG.md",
     "SECURITY.md",
-    "templates"
+    "templates",
+    "tsconfig"
   ],
   "exports": {
     ".": {
@@ -91,7 +92,8 @@
     "./csp": {
       "types": "./dist/csp.d.ts",
       "default": "./src/csp.js"
-    }
+    },
+    "./tsconfig/vue-app.json": "./tsconfig/vue-app.json"
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",

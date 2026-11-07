@@ -85,3 +85,34 @@ export function assertE2eOnlyInE2eMode(mode, env = process.env) {
     throw new Error(`VITE_E2E is set but the build mode is "${mode}": the end-to-end build is \`vite build --mode e2e\`, and nothing else may include the test wallet.`)
   }
 }
+
+/**
+ * The Vite configuration every MeddleWare tool app shares: the browserslist build target, the colour mode and season before first paint
+ * ({@link themeInit}), the e2e-build guard ({@link assertE2eOnlyInE2eMode}), and `@meddleware/wallet-adapter` excluded from dependency
+ * pre-bundling. The wallet adapter ships TS and `.vue` source and holds the shared wallet singleton; pre-bundling would put its TS in
+ * `.vite/deps` while its `.vue` files (which esbuild cannot bundle) are served raw and import the raw module, so dev would run two
+ * singletons and the guard and the app would see different connection state.
+ *
+ * ```ts
+ * import vue from '@vitejs/plugin-vue'
+ * export default meddlewareApp({ plugins: [vue()] })
+ * ```
+ *
+ * @param {object} options
+ * @param {import('vite').PluginOption[]} options.plugins The app's plugins (`vue()` …); `themeInit` is added after them.
+ * @param {'light' | 'dark' | 'system'} [options.theme] The mode a first visit gets (default `dark`, the brand default).
+ * @param {boolean} [options.wallet] The app uses `@meddleware/wallet-adapter` (default true): keep it out of pre-bundling.
+ * @param {import('vite').UserConfig} [options.config] Anything else (`base`, `build.rollupOptions`, `server` …); `build` is merged.
+ * @returns {import('vite').UserConfigFnObject}
+ */
+export function meddlewareApp({ plugins, theme = 'dark', wallet = true, config = {} }) {
+  return ({ mode }) => {
+    assertE2eOnlyInE2eMode(mode)
+    return {
+      ...config,
+      build: { target: viteTarget(), ...config.build },
+      plugins: [...plugins, themeInit({ default: theme })],
+      ...(wallet ? { optimizeDeps: { ...config.optimizeDeps, exclude: ['@meddleware/wallet-adapter', ...(config.optimizeDeps?.exclude ?? [])] } } : {}),
+    }
+  }
+}

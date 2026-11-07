@@ -50,3 +50,32 @@ export function installDialogShim() {
     this.dispatchEvent(new Event('close'))
   }
 }
+
+/**
+ * The Vitest configuration of a MeddleWare Vue repository: jsdom, `tests/**\/*.test.ts`, a single copy of Vue for the code under test and
+ * `@vue/test-utils`, and the UI packages processed through Vite ({@link inlineMeddleware}).
+ *
+ * ```ts
+ * import vue from '@vitejs/plugin-vue'
+ * export default defineConfig(vueTestConfig({ plugins: [vue()] }))
+ * ```
+ *
+ * @param {object} options
+ * @param {import('vite').PluginOption[]} options.plugins The Vue plugin (and any other the tests need).
+ * @param {import('vitest/config').TestUserConfig} [options.test] Overrides merged into `test` (`include`, `setupFiles`, `environment` …).
+ * @returns {import('vitest/config').ViteUserConfig & { test: import('vitest/config').TestUserConfig }}
+ */
+export function vueTestConfig({ plugins, test = {} }) {
+  const inline = test.server?.deps?.inline
+  return {
+    plugins,
+    resolve: { dedupe: ['vue', '@vue/test-utils'] },
+    test: {
+      environment: 'jsdom',
+      include: ['tests/**/*.test.ts'],
+      exclude: ['node_modules/**'],
+      ...test,
+      server: { ...test.server, deps: { ...test.server?.deps, inline: inline === true ? true : [...inlineMeddleware, ...(inline ?? [])] } },
+    },
+  }
+}
