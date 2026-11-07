@@ -1,0 +1,13 @@
+# Build context: sources only. The image runs its own `npm ci` and production build, so local
+# installs and build output never enter it — and local-only env files (Vite loads `.env*.local` in
+# every mode) can never be baked into the production bundle. Committed `.env` / `.env.production`
+# defaults stay in the context on purpose.
+node_modules
+dist
+.git
+.github
+.env*.local
+*.log
+test-results
+playwright-report
+coverage

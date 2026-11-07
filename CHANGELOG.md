@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2026-11-07
+
+### Added
+
+- `mw-audit-gate`, `mw-third-party-licenses` and `mw-check-csp-inline`: the dependency-audit gate, the licence bundle and the inline-script
+  CSP check that every app repository carried as its own copy of a script.
+- `/csp`: `buildCsp`, `cspForProfile` and six named profiles that reproduce, byte for byte, the policies the app images served.
+- `mw-sync --check|--write` and `templates/`: the files that cannot be shared by reference stay identical across repositories, and the
+  Dockerfile's `ARG CSP` is held equal to the repository's profile.
+
 ## [0.0.2] - 2026-11-01
 
 ### Added

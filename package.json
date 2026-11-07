@@ -23,7 +23,8 @@
     "src",
     "dist",
     "CHANGELOG.md",
-    "SECURITY.md"
+    "SECURITY.md",
+    "templates"
   ],
   "exports": {
     ".": {
@@ -86,6 +87,10 @@
     "./bundle": {
       "types": "./dist/bundle.d.ts",
       "default": "./src/bundle.js"
+    },
+    "./csp": {
+      "types": "./dist/csp.d.ts",
+      "default": "./src/csp.js"
     }
   },
   "scripts": {
@@ -164,6 +169,10 @@
     "not dead"
   ],
   "bin": {
-    "check-prod-bundle": "./src/check-prod-bundle.js"
+    "check-prod-bundle": "./src/check-prod-bundle.js",
+    "mw-audit-gate": "./src/audit-gate.js",
+    "mw-third-party-licenses": "./src/third-party-licenses.js",
+    "mw-check-csp-inline": "./src/check-csp-inline.js",
+    "mw-sync": "./src/sync.js"
   }
 }
