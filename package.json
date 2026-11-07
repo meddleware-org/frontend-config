@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/frontend-config",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "description": "Shared frontend tooling for MeddleWare apps: browser support, ESLint, Stylelint, html-validate, PostCSS, Playwright, axe, screenshots, Lighthouse and the Vite target.",
   "license": "0BSD",
