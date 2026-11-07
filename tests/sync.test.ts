@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -63,5 +63,15 @@ describe('mw-sync', () => {
     expect(run('--write').status).toBe(0)
     expect(run('--check').status).toBe(0)
     expect(run().status).toBe(2)
+  })
+
+  it('runs through a symlink, as an installed bin does', () => {
+    const d = repo({ kind: 'app' })
+    mkdirSync(join(d, 'node_modules/.bin'), { recursive: true })
+    const link = join(d, 'node_modules/.bin/mw-sync')
+    symlinkSync(join(import.meta.dirname, '..', 'src', 'sync.js'), link)
+    expect(spawnSync(link, ['--check'], { cwd: d, encoding: 'utf8' }).status).toBe(1)
+    expect(spawnSync(link, ['--write'], { cwd: d, encoding: 'utf8' }).status).toBe(0)
+    expect(spawnSync(link, ['--check'], { cwd: d, encoding: 'utf8' }).status).toBe(0)
   })
 })

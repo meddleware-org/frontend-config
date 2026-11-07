@@ -9,7 +9,7 @@
 // The file is committed, so the page and its tests never depend on a hidden build step; CI runs `--check`, and bumping a client package
 // (Dependabot, or a release that adds a mainnet record) fails the check until the file is regenerated with `--out`. The repository needs `@meddleware/web-utils` and the two clients
 // (`@meddleware/access-gate-client`, `@meddleware/sealed-storage-client`) installed; it fails when one is missing rather than guess.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -28,7 +28,8 @@ export function networkStatus(utils, records) {
   return utils.networkAvailability(Object.fromEntries(Object.entries(records).map(([name, deployments]) => [name, Object.keys(deployments)])))
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+// `process.argv[1]` is the symlink in node_modules/.bin when run as a bin: compare real paths.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const args = process.argv.slice(2)
   const outIndex = args.indexOf('--out')
   const out = outIndex >= 0 ? args[outIndex + 1] : undefined

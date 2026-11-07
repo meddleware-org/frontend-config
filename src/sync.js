@@ -11,7 +11,7 @@
 //   kind  "app"  → .github/dependabot.yml, .dockerignore, postcss.config.js, stylelint.config.js are the templates
 //   csp   a profile of ./csp.js → the Dockerfile's `ARG CSP="…"` is that profile's policy (`docs` keeps the script hashes already there)
 //   lhci  true   → .github/audit-allowlist.json is the template (the dated allowlist for the Lighthouse CI tool chain; one expiry, reviewed together)
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cspForProfile } from './csp.js'
@@ -67,7 +67,8 @@ export function sync(root, options = {}) {
   return out
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+// `process.argv[1]` is the symlink in node_modules/.bin when run as a bin: compare real paths.
+if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) {
   const args = process.argv.slice(2)
   const write = args.includes('--write')
   if (!write && !args.includes('--check')) {

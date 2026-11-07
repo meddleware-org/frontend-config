@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -50,6 +50,14 @@ describe('mw-network-status', () => {
     expect(spawnSync('node', [cli, '--check', 'network.json'], { cwd: d, encoding: 'utf8' }).status).toBe(0)
     writeFileSync(join(d, 'node_modules/@meddleware/access-gate-client/index.js'), 'export const ACCESS_GATE_DEPLOYMENTS = { testnet: {}, mainnet: {} }')
     expect(spawnSync('node', [cli, '--check', 'network.json'], { cwd: d, encoding: 'utf8' }).status).toBe(1)
+  })
+  it('runs through a symlink, as an installed bin does', () => {
+    const d = repo(false)
+    mkdirSync(join(d, 'node_modules/.bin'), { recursive: true })
+    symlinkSync(cli, join(d, 'node_modules/.bin/mw-network-status'))
+    const r = spawnSync(join(d, 'node_modules/.bin/mw-network-status'), ['--out', 'network.json'], { cwd: d, encoding: 'utf8' })
+    expect(r.status).toBe(0)
+    expect(readFileSync(join(d, 'network.json'), 'utf8')).toContain('access gate')
   })
   it('fails when a client is not installed', () => {
     const d = mkdtempSync(join(tmpdir(), 'ns-'))

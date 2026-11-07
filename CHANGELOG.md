@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2026-11-07
+
+### Fixed
+
+- `mw-network-status` and `mw-sync` did nothing when run as an installed bin (they compared the symlink in `node_modules/.bin` with the real path); both now compare real paths, and a test runs each through a symlink.
+
 ## [0.0.5] - 2026-11-07
 
 ### Added
