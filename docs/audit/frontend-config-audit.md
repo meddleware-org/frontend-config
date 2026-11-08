@@ -212,7 +212,7 @@ All hermetic: pages are `setContent` fixtures; Chromium is the only real browser
 - [ ] placeholder versions deprecated (F6) — maintainer
 
 ### pre-mainnet
-- [ ] external review
+- [ ] external review (ADR-0009 gate G4: not a launch gate; covered by redeploy and the audit pass)
 - [ ] renumber to 0.2.0 at go-live
 
 ## Cross-project themes
