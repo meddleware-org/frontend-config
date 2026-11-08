@@ -36,7 +36,7 @@ export const PROFILES = {
 export function buildCsp(options = {}) {
   const { wasm = false, chain = false, worker = false, strict = false, frameAncestors = 'self', scriptHashes = [] } = options
   const script = ["'self'", ...(wasm ? ["'wasm-unsafe-eval'"] : []), ...scriptHashes.map((h) => `'${h.replace(/^'|'$/g, '')}'`)]
-  const richImages = chain || worker
+  const richImages = chain // only an app that shows other people's images (a chain app: wallet icons, blob previews) may load https images
   const directives = [
     ["default-src", "'self'"],
     ['script-src', script.join(' ')],

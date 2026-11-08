@@ -102,17 +102,87 @@ export function assertE2eOnlyInE2eMode(mode, env = process.env) {
  * @param {import('vite').PluginOption[]} options.plugins The app's plugins (`vue()` …); `themeInit` is added after them.
  * @param {'light' | 'dark' | 'system'} [options.theme] The mode a first visit gets (default `dark`, the brand default).
  * @param {boolean} [options.wallet] The app uses `@meddleware/wallet-adapter` (default true): keep it out of pre-bundling.
+ * @param {string} [options.name] The app's name for the web manifest (default `Meddleware`).
  * @param {import('vite').UserConfig} [options.config] Anything else (`base`, `build.rollupOptions`, `server` …); `build` is merged.
  * @returns {import('vite').UserConfigFnObject}
  */
-export function meddlewareApp({ plugins, theme = 'dark', wallet = true, config = {} }) {
+export function meddlewareApp({ plugins, theme = 'dark', wallet = true, name, config = {} }) {
   return ({ mode }) => {
     assertE2eOnlyInE2eMode(mode)
     return {
       ...config,
       build: { target: viteTarget(), ...config.build },
-      plugins: [...plugins, themeInit({ default: theme })],
+      plugins: [...plugins, themeInit({ default: theme }), brandIcons({ name })],
       ...(wallet ? { optimizeDeps: { ...config.optimizeDeps, exclude: ['@meddleware/wallet-adapter', ...(config.optimizeDeps?.exclude ?? [])] } } : {}),
     }
+  }
+}
+
+/** The brand files `@meddleware/ui` publishes (`@meddleware/ui/brand/*`), by served name. */
+const BRAND_FILES = /** @type {const} */ ({
+  'favicon.svg': 'image/svg+xml',
+  'favicon.ico': 'image/x-icon',
+  'apple-touch-icon.png': 'image/png',
+  'icon-192.png': 'image/png',
+  'icon-512.png': 'image/png',
+})
+
+/**
+ * The favicon set of the company mark (the Kopimi "K"), for an app's `index.html`: serves the files from `@meddleware/ui` in dev, emits them
+ * into the build at the site root (`/favicon.svg`, `/favicon.ico`, `/apple-touch-icon.png`, `/icon-192.png`, `/icon-512.png`, `/site.webmanifest`)
+ * and adds the `<link>` tags. An app keeps no icon of its own (`mw-sync --check` fails on a `public/favicon.*`), and its `index.html` has no
+ * `<link rel="icon">`.
+ *
+ * @param {object} [options]
+ * @param {string} [options.name] The app's name, for the web manifest. Default `Meddleware`.
+ * @returns {import('vite').Plugin}
+ */
+export function brandIcons({ name = 'Meddleware' } = {}) {
+  const read = (/** @type {string} */ file) => readFileSync(resolveFromApp(`@meddleware/ui/brand/${file}`))
+  const manifest = () => {
+    const { semantic } = JSON.parse(readFileSync(resolveFromApp('@meddleware/design-tokens/tokens.json'), 'utf8'))
+    return JSON.stringify(
+      {
+        name,
+        short_name: name,
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        ],
+        theme_color: semantic.dark.bg,
+        background_color: semantic.dark.bg,
+        display: 'browser',
+      },
+      null,
+      2,
+    )
+  }
+  return {
+    name: 'meddleware:brand-icons',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const file = (req.url ?? '').split('?')[0]?.slice(1) ?? ''
+        if (file in BRAND_FILES) {
+          res.setHeader('content-type', BRAND_FILES[/** @type {keyof typeof BRAND_FILES} */ (file)])
+          res.end(read(file))
+        } else if (file === 'site.webmanifest') {
+          res.setHeader('content-type', 'application/manifest+json')
+          res.end(manifest())
+        } else next()
+      })
+    },
+    generateBundle() {
+      for (const file of Object.keys(BRAND_FILES)) this.emitFile({ type: 'asset', fileName: file, source: read(file) })
+      this.emitFile({ type: 'asset', fileName: 'site.webmanifest', source: manifest() })
+    },
+    transformIndexHtml() {
+      return [
+        { tag: 'link', attrs: { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' }, injectTo: 'head' },
+        { tag: 'link', attrs: { rel: 'icon', href: '/favicon.ico', sizes: '48x48' }, injectTo: 'head' },
+        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }, injectTo: 'head' },
+        { tag: 'link', attrs: { rel: 'manifest', href: '/site.webmanifest' }, injectTo: 'head' },
+      ]
+    },
   }
 }

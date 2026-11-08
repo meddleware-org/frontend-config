@@ -11,7 +11,7 @@
 //   kind  "app"  → .github/dependabot.yml, .dockerignore, postcss.config.js, stylelint.config.js are the templates
 //   csp   a profile of ./csp.js → the Dockerfile's `ARG CSP="…"` is that profile's policy (`docs` keeps the script hashes already there)
 //   lhci  true   → .github/audit-allowlist.json is the template (the dated allowlist for the Lighthouse CI tool chain; one expiry, reviewed together)
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cspForProfile } from './csp.js'
@@ -47,6 +47,17 @@ export function sync(root, options = {}) {
     expectFile('.dockerignore', tpl('dockerignore'))
     expectFile('postcss.config.js', tpl('postcss.config.js'))
     expectFile('stylelint.config.js', tpl('stylelint.config.js'))
+  }
+  if (cfg.kind === 'app') {
+    // The favicon set comes from `@meddleware/ui` through `brandIcons` (an app keeps none of its own).
+    for (const f of ['public/favicon.svg', 'public/favicon.ico', 'public/apple-touch-icon.png']) {
+      const p = join(root, f)
+      if (!existsSync(p)) continue
+      if (options.write) {
+        rmSync(p)
+        out.push({ file: f, ok: true, note: 'removed (served by brandIcons from @meddleware/ui)' })
+      } else out.push({ file: f, ok: false, note: 'an app serves the brand icons through brandIcons; delete this file (mw-sync --write does)' })
+    }
   }
   if (cfg.lhci === true) expectFile('.github/audit-allowlist.json', tpl('audit-allowlist.lhci.json'))
   if (cfg.csp) {

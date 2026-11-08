@@ -6,7 +6,7 @@ describe('meddlewareApp', () => {
   const env = { mode: 'production', command: 'build' } as const
   it('adds the theme plugin after the app plugins, a browserslist target and the wallet-adapter exclusion', () => {
     const cfg = meddlewareApp({ plugins: [{ name: 'a' }] })(env) as any
-    expect(cfg.plugins.map((p: { name: string }) => p.name)).toEqual(['a', 'meddleware:theme-init'])
+    expect(cfg.plugins.map((p: { name: string }) => p.name)).toEqual(['a', 'meddleware:theme-init', 'meddleware:brand-icons'])
     expect(cfg.optimizeDeps.exclude).toEqual(['@meddleware/wallet-adapter'])
     expect(cfg.build.target).toBeDefined()
   })
