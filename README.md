@@ -84,6 +84,12 @@ for (const { theme, season } of looks()) {
 }
 ```
 
+## Preview ports
+
+Each repository's Playwright and Lighthouse CI preview server has its own port, listed once in `ports.json` (a test fails if two repositories share one).
+`definePlaywrightConfig` does not reuse a server that is already listening unless `PW_REUSE_SERVER=1`, so a leftover preview of another repository cannot answer a run: it fails to start instead.
+Add the port to `ports.json` when a repository gets a Playwright config; take the next free number.
+
 ## The support promise
 
 `last 2` of Chrome, Chrome for Android, Edge, Firefox, Firefox for Android, Safari, iOS Safari and Samsung Internet, plus Firefox

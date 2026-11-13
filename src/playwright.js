@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * @param {object} options
- * @param {number} options.port Preview server port (unique per repo, so repos can run side by side).
+ * @param {number} options.port Preview server port, unique per repo (the registry is `ports.json` in this package's repository), so repos can run side by side.
  * @param {'app' | 'gallery' | 'vitepress'} [options.kind] What is served. `app`: `npm run build` then `vite preview`.
  *   `gallery`: `npm run build:gallery` then `vite preview --config vite.gallery.config.ts`. `vitepress`: `vitepress preview docs`
  *   (the site must already be built, so the repo's `test:e2e` script builds first).
@@ -53,7 +53,9 @@ export function definePlaywrightConfig({ port, kind = 'app', command, browsers, 
     webServer: {
       command: command ?? server,
       url: `http://localhost:${port}/`,
-      reuseExistingServer: !process.env.CI,
+      // A server already listening on the port is NOT reused unless PW_REUSE_SERVER=1: a leftover preview of another repo on the same port
+      // once answered a whole run with the wrong app on screen. The port registry (ports.json) keeps every repo's port unique.
+      reuseExistingServer: process.env.PW_REUSE_SERVER === '1',
       timeout: 180_000,
     },
     projects,
