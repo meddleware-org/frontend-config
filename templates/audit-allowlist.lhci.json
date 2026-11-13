@@ -1,12 +1,1 @@
-[
-  {
-    "id": "GHSA-jmr9-qjv8-65gv",
-    "reason": "extract-zip has no patched release. It is a dev-only transitive of @lhci/cli (lighthouse > puppeteer-core > @puppeteer/browsers) and only unpacks browser archives that Lighthouse CI downloads itself; nothing from it ships in the image.",
-    "expires": "2027-01-31"
-  },
-  {
-    "id": "GHSA-7pqw-9j4j-h8q3",
-    "reason": "extract-zip has no patched release. It is a dev-only transitive of @lhci/cli (lighthouse > puppeteer-core > @puppeteer/browsers) and only unpacks browser archives that Lighthouse CI downloads itself; nothing from it ships in the image.",
-    "expires": "2027-01-31"
-  }
-]
+[]
