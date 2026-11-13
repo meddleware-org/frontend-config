@@ -87,7 +87,7 @@ export function assertE2eOnlyInE2eMode(mode, env = process.env) {
 }
 
 /**
- * The Vite configuration every MeddleWare tool app shares: the browserslist build target, the colour mode and season before first paint
+ * The Vite configuration every Meddleware tool app shares: the browserslist build target, the colour mode and season before first paint
  * ({@link themeInit}), the e2e-build guard ({@link assertE2eOnlyInE2eMode}), and `@meddleware/wallet-adapter` excluded from dependency
  * pre-bundling. The wallet adapter ships TS and `.vue` source and holds the shared wallet singleton; pre-bundling would put its TS in
  * `.vite/deps` while its `.vue` files (which esbuild cannot bundle) are served raw and import the raw module, so dev would run two

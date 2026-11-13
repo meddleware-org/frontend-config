@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // @ts-check
-// mw-network-status — write which networks MeddleWare is deployed on, from the deployment records of the installed client packages, so a static
+// mw-network-status — write which networks Meddleware is deployed on, from the deployment records of the installed client packages, so a static
 // site (landing page, docs, developer docs) says "mainnet is coming" until the records have a `mainnet` key and says "live" the moment they do.
 //
 //   mw-network-status --out src/network.json      write the file

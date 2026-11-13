@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // @ts-check
-// mw-sync — keep the files that every MeddleWare frontend repository copies from this package identical to the package's templates, and the
+// mw-sync — keep the files that every Meddleware frontend repository copies from this package identical to the package's templates, and the
 // Dockerfile's Content-Security-Policy equal to its named profile. Run in a repository root:
 //
 //   mw-sync --check    fail (exit 1) when a file differs; print which and how to fix

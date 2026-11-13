@@ -52,7 +52,7 @@ export function installDialogShim() {
 }
 
 /**
- * The Vitest configuration of a MeddleWare Vue repository: jsdom, `tests/**\/*.test.ts`, a single copy of Vue for the code under test and
+ * The Vitest configuration of a Meddleware Vue repository: jsdom, `tests/**\/*.test.ts`, a single copy of Vue for the code under test and
  * `@vue/test-utils`, and the UI packages processed through Vite ({@link inlineMeddleware}).
  *
  * ```ts

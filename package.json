@@ -2,9 +2,9 @@
   "name": "@meddleware/frontend-config",
   "version": "0.0.9",
   "type": "module",
-  "description": "Shared frontend tooling for MeddleWare apps: browser support, ESLint, Stylelint, html-validate, PostCSS, Playwright, axe, screenshots, Lighthouse and the Vite target.",
+  "description": "Shared frontend tooling for Meddleware apps: browser support, ESLint, Stylelint, html-validate, PostCSS, Playwright, axe, screenshots, Lighthouse and the Vite target.",
   "license": "0BSD",
-  "author": "MeddleWare <dev@meddleware.co.uk>",
+  "author": "Meddleware <dev@meddleware.co.uk>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/meddleware-org/frontend-config.git"

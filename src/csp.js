@@ -1,5 +1,5 @@
 // @ts-check
-// The Content-Security-Policy of a MeddleWare static site, built from a named profile. Every frontend image serves one (the Dockerfile's `ARG CSP`,
+// The Content-Security-Policy of a Meddleware static site, built from a named profile. Every frontend image serves one (the Dockerfile's `ARG CSP`,
 // handed to static-server): twelve hand-copied strings drifted in small ways, so the profiles live here and `mw-sync` checks each Dockerfile against its
 // profile. A policy has no 'unsafe-inline' for scripts (`mw-check-csp-inline` fails the build on an inline script that is not allowed by hash).
 

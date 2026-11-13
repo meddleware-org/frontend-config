@@ -2,7 +2,7 @@
 
 ## Scope
 
-This policy covers `@meddleware/frontend-config`: lint, build and test configuration for MeddleWare frontends. It runs only in a
+This policy covers `@meddleware/frontend-config`: lint, build and test configuration for Meddleware frontends. It runs only in a
 consumer's development and CI processes (ESLint, Stylelint, html-validate, PostCSS, Vite, Playwright, Lighthouse); it ships nothing
 to end users and makes no network requests of its own.
 
