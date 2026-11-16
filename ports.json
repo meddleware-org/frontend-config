@@ -13,5 +13,8 @@
   "docs-site": 4294,
   "dev-site": 4295,
   "vitepress-theme": 4296,
-  "roadmap-site": 4297
+  "roadmap-site": 4297,
+  "link-in-bio-service": 4298,
+  "link-in-bio-ui": 4299,
+  "chain-payments-kit": 4300
 }
