@@ -34,7 +34,17 @@ export function stylelintConfig({ tokens = 'error', compat = 'error', browsers, 
       here('@double-great/stylelint-a11y'),
       here('stylelint-declaration-strict-value'),
     ],
-    overrides: [{ files: ['**/*.vue', '**/*.html'], customSyntax: postcssHtml }],
+    overrides: [
+      {
+        files: ['**/*.vue', '**/*.html'],
+        customSyntax: postcssHtml,
+        rules: {
+          // Vue binds component state into styles with v-bind(), directly or through a custom property; stylelint 18
+          // follows var() to that value and would call it unknown. Any other unknown value is still an error.
+          'declaration-property-value-no-unknown': [true, { ignoreProperties: { '/.+/': ['/v-bind\\(/'] } }],
+        },
+      },
+    ],
     rules: {
       // The design system leans heavily on custom properties and deliberate ordering; these standard rules are too noisy for
       // a token-driven codebase.

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.13] - 2026-11-18
+
+- The stylelint config accepts Vue's `v-bind()` in `.vue` and `.html` styles, written directly or reached through a
+  custom property. stylelint 18's `declaration-property-value-no-unknown` follows `var()` to that value and called it
+  unknown; any other unknown value is still an error.
+
 ## [0.0.12] - 2026-11-18
 
 - Peers: `@playwright/test ~1.65.1` and `stylelint ^18.0.0` (were `~1.64.1` and `^17`), so consumers can take Playwright

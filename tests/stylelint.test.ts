@@ -67,6 +67,13 @@ describe('stylelintConfig', () => {
     expect(await warnings(sfc, undefined, 'A.vue')).toEqual([])
   })
 
+  it('accepts Vue v-bind() in styles, directly or through a custom property, and still refuses unknown values', async () => {
+    const ok = '<template><p class="a">x</p></template>\n<style scoped>\n.a {\n  --_width: v-bind(width);\n  width: var(--_width);\n  height: v-bind(height);\n}\n</style>\n'
+    expect(await warnings(ok, undefined, 'A.vue')).toEqual([])
+    const bad = '<template><p class="a">x</p></template>\n<style scoped>\n.a {\n  width: nonsense-value;\n}\n</style>\n'
+    expect((await warnings(bad, undefined, 'A.vue')).map((w) => w.rule)).toEqual(['declaration-property-value-no-unknown'])
+  })
+
   it('checks CSS features against the browsers it is given, as an error by default', async () => {
     const css = '.a:has(b) {\n  gap: var(--space-xs);\n}\n'
     const w = await warnings(css, { browsers: ['ie 11'] })
