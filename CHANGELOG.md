@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.14] - 2026-11-18
+
+- The `@playwright/test` peer is back to `~1.64.1`. Playwright 1.65.x bundles a Firefox build whose pages crash when
+  `getByRole` or `getByLabel` runs after an axe scan on a page with `aria-labelledby`
+  ([microsoft/playwright#43967](https://github.com/microsoft/playwright/issues/43967), #44135), which the shared a11y
+  sweep does on every page; the fix (Firefox r1575) is not in a 1.65 release. The synced Dependabot template ignores
+  `@playwright/test` 1.65.x until the move to 1.66.
+
 ## [0.0.13] - 2026-11-18
 
 - The stylelint config accepts Vue's `v-bind()` in `.vue` and `.html` styles, written directly or reached through a

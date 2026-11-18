@@ -8,6 +8,10 @@ updates:
     ignore:
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # Playwright 1.65.x ships a Firefox build that crashes pages when getByRole/getByLabel follow an axe scan
+      # (microsoft/playwright#43967, #44135; fixed in Firefox r1575, not in a 1.65 release). Remove with the 1.66 move.
+      - dependency-name: "@playwright/test"
+        versions: ["1.65.x"]
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
