@@ -1,6 +1,6 @@
 import { chromium, type Browser, type Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { expectKeyboardFocusVisible, expectNoHorizontalScroll, expectNoRunningAnimations } from '../src/a11y.js'
+import { expectKeyboardFocusVisible, expectNoHorizontalScroll, expectNoRunningAnimations, expectStickyHeaderHoldsStill } from '../src/a11y.js'
 
 // The three assertions the sweep is built from, against a real Chromium: each fails for the fault it names and passes without it.
 let browser: Browser
@@ -114,5 +114,29 @@ describe('expectKeyboardFocusVisible', () => {
 
   it('fails when there is nothing to tab to', async () => {
     await expect(expectKeyboardFocusVisible(await open('<p>text only</p>'))).rejects.toThrow(/no keyboard stops/)
+  })
+})
+
+describe('expectStickyHeaderHoldsStill', () => {
+  const tall = '<div style="height:2000px">content</div>'
+  const sticky = 'body { margin: 0 } header { position: sticky; top: 0; height: 40px; background: transparent; transition: background 100ms }'
+  /** A header that turns solid once the page has scrolled past 8 px: the fault this check exists for. */
+  const solidifies = async (): Promise<Page> => {
+    const page = await open(`<header>h</header>${tall}`, sticky)
+    await page.evaluate(() => addEventListener('scroll', () => document.querySelector('header')!.setAttribute('style', scrollY > 8 ? 'background: rgb(10, 10, 10)' : '')))
+    return page
+  }
+
+  it('passes a sticky header that looks the same at every scroll position', async () => {
+    await expectStickyHeaderHoldsStill(await open(`<header>h</header>${tall}`, `${sticky}; header { background: rgb(10, 10, 10) }`))
+  })
+
+  it('fails a header whose background changes after a few pixels of scroll', async () => {
+    await expect(expectStickyHeaderHoldsStill(await solidifies())).rejects.toThrow(/background changes after 9px of scroll/)
+  })
+
+  it('has nothing to check on a page with no sticky header, or one too short to scroll', async () => {
+    await expectStickyHeaderHoldsStill(await open(`<header>h</header>${tall}`, 'body { margin: 0 }'))
+    await expectStickyHeaderHoldsStill(await open('<header>h</header><p>short</p>', sticky))
   })
 })

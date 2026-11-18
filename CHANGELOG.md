@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.15] - 2026-11-18
+
+- `defineA11ySuite` adds a check to every state: a sticky or fixed header sits and paints the same (position, size, background, border, shadow) at 0, 1, 4, 8, 9, 16 and 40 px of scroll. A header that only changed after a few pixels of scroll looked as if it became "stuck" then, and showed as a jolt. A page with no sticky header, or too short to scroll, has nothing to check. Exported on its own as `expectStickyHeaderHoldsStill`. Run against the public sites on 2026-11-18, only the landing page failed (fixed in `@meddleware/ui` 0.1.44).
+
 ## [0.0.14] - 2026-11-18
 
 - The `@playwright/test` peer is back to `~1.64.1`. Playwright 1.65.x bundles a Firefox build whose pages crash when

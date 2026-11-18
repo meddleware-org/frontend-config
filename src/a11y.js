@@ -22,6 +22,49 @@ export async function expectNoHorizontalScroll(page) {
 }
 
 /**
+ * A sticky or fixed header sits and paints the same at every scroll position. A header that changes its background, border or shadow once
+ * the page has moved a few pixels looks as if it only becomes "stuck" then, and the change shows as a jolt. The header is the first
+ * `header` or `banner` that is `sticky` or `fixed` at the top of the page; a page with none, or too short to scroll, has nothing to check.
+ * @param {import('@playwright/test').Page} page
+ */
+export async function expectStickyHeaderHoldsStill(page) {
+  /** Scrolls to `y`, waits long enough for a scroll handler and a transition (the usual causes) to finish, then reads the header. */
+  const sample = async (/** @type {number} */ y) => {
+    await page.evaluate((offset) => window.scrollTo({ top: offset, behavior: 'instant' }), y)
+    await page.waitForTimeout(450)
+    return page.evaluate(() => {
+      const header = [...document.querySelectorAll('header, [role="banner"]')].find((el) => {
+        const cs = getComputedStyle(el)
+        return (cs.position === 'sticky' || cs.position === 'fixed') && cs.top === '0px' && el.getBoundingClientRect().height > 0
+      })
+      if (!header) return null
+      const cs = getComputedStyle(header)
+      const box = header.getBoundingClientRect()
+      return {
+        top: Math.round(box.top * 10) / 10,
+        height: Math.round(box.height * 10) / 10,
+        background: cs.backgroundColor,
+        border: cs.borderBottomColor,
+        shadow: cs.boxShadow,
+        backdrop: cs.backdropFilter,
+      }
+    })
+  }
+  const scrollable = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)
+  if (scrollable < 48) return
+  const rest = await sample(0)
+  if (!rest) return
+  for (const y of [1, 4, 8, 9, 16, 40]) {
+    const now = await sample(y)
+    expect(now, `the header is gone at ${y}px of scroll`).not.toBeNull()
+    for (const key of /** @type {const} */ (['top', 'height', 'background', 'border', 'shadow', 'backdrop'])) {
+      expect(now?.[key], `the sticky header's ${key} changes after ${y}px of scroll (it should look the same at every scroll position)`).toBe(rest[key])
+    }
+  }
+  await sample(0)
+}
+
+/**
  * No animation is running: with `prefers-reduced-motion: reduce` the page holds still (WCAG 2.3.3).
  * @param {import('@playwright/test').Page} page
  */
@@ -213,6 +256,11 @@ export function defineA11ySuite(states, { aaa = 'report', noKeyboard = [], maxSt
         await open(page)
         // The browser chooses the colours in forced-colours mode, so axe's contrast arithmetic on the declared ones does not apply.
         await expectAccessible(page, { aaa: 'off', disableRules: [...disableRules, 'color-contrast'] })
+      })
+
+      test('a sticky header sits and paints the same at every scroll position', async ({ page }) => {
+        await open(page)
+        await expectStickyHeaderHoldsStill(page)
       })
 
       test('holds still with reduced motion', async ({ page }) => {
