@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.12] - 2026-11-18
+
+- Peers: `@playwright/test ~1.65.1` and `stylelint ^18.0.0` (were `~1.64.1` and `^17`), so consumers can take Playwright
+  1.65 and stylelint 18 with stylelint-config-standard 41 together (FU-0147).
+- The shared stylelint config builds on `stylelint-config-standard ^41`, `stylelint-declaration-strict-value ^1.13` and
+  `@double-great/stylelint-a11y ^3.8.3`, and no longer names `declaration-block-single-line-max-declarations`, which
+  stylelint 18 removed (naming it is an "Unknown rule" error there).
+- `typescript-eslint ^8.73.0` (and eslint 10.15 in development): both now use `minimatch` 11, which fixes
+  GHSA-g3hv-75wg-m249 (a denial of service in `minimatch` 7 to 11.0.0) for every consumer.
+
 ## [0.0.11] - 2026-11-18
 
 - The synced `.github/audit-allowlist.json` template (`lhci: true`) lists GHSA-fc5q-39xc-vjpf (picomatch ReDoS, no patched
