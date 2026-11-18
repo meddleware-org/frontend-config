@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.11] - 2026-11-18
+
+- The synced `.github/audit-allowlist.json` template (`lhci: true`) lists GHSA-fc5q-39xc-vjpf (picomatch ReDoS, no patched
+  release, dev tooling only) until 2027-01-31. Repositories pick it up with `mw-sync --write` after updating.
+
 ## [0.0.10] - 2026-11-13
 
 definePlaywrightConfig never reuses a server already on the preview port (PW_REUSE_SERVER=1 opts in) and ports.json is the registry of preview ports (FU-0075); documentation spelling.

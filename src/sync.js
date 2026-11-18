@@ -10,7 +10,7 @@
 //   "meddleware": { "kind": "app", "csp": "chain-wasm", "lhci": true }
 //   kind  "app"  → .github/dependabot.yml, .dockerignore, postcss.config.js, stylelint.config.js are the templates
 //   csp   a profile of ./csp.js → the Dockerfile's `ARG CSP="…"` is that profile's policy (`docs` keeps the script hashes already there)
-//   lhci  true   → .github/audit-allowlist.json is the template (the dated allowlist for the Lighthouse CI tool chain; one expiry, reviewed together)
+//   lhci  true   → .github/audit-allowlist.json is the template (the dated allowlist for the dev tool chain: Lighthouse CI, vite, lint; reviewed together)
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
