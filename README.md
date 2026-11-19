@@ -107,6 +107,12 @@ best-practice violation. WCAG AAA (`wcag2aaa`, including enhanced contrast) is t
 switches to `gate` in the release that clears its AAA findings. `@meddleware/design-tokens` already guarantees 7:1 for every
 text and label role in every theme × season, so remaining AAA findings are local colours and sizes, not the palette.
 
+## Lighthouse CI and deprecated packages
+
+`@lhci/cli` (0.16.1, the newest) still depends on `chrome-launcher` 0.13, which pulls the deprecated `rimraf` 3, `glob` 7 and `inflight`
+into every app that runs Lighthouse CI. Each such app sets `"overrides": { "chrome-launcher": "^1.2.3" }` in its `package.json`
+(1.2.3 drops them; Lighthouse CI runs unchanged). Remove the override when `@lhci/cli` moves to chrome-launcher 1 (workspace D137).
+
 ## Browsers in tests
 
 `definePlaywrightConfig` runs Chromium locally and five projects in CI: Chromium, Firefox, WebKit, a Pixel 7 and an iPhone 14
