@@ -65,6 +65,10 @@
       "types": "./dist/a11y.d.ts",
       "default": "./src/a11y.js"
     },
+    "./storage": {
+      "types": "./dist/storage.d.ts",
+      "default": "./src/storage.js"
+    },
     "./shots": {
       "types": "./dist/shots.d.ts",
       "default": "./src/shots.js"
