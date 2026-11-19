@@ -133,6 +133,11 @@ swaps a module for a stand-in adds a marker of that stand-in: `check-prod-bundle
 
 ## Peers
 
-`eslint` ^10 (required for `/eslint`), and optional peers per subpath: `stylelint` ^17, `html-validate` ^11, `postcss` ^8,
+`eslint` ^10 (required for `/eslint`), and optional peers per subpath: `stylelint` ^18, `html-validate` ^11, `postcss` ^8,
 `@playwright/test` ~1.64. The lint plugins are dependencies of this package and are resolved from it, so a consumer needs none of
 them.
+
+Playwright stays on 1.64.1 for now: 1.65.x bundles a Firefox (r1572) whose pages crash when `getByRole` or `getByLabel` follows an
+axe scan ([microsoft/playwright#43967](https://github.com/microsoft/playwright/issues/43967)), which the a11y sweep does on every
+page, and the synced Dependabot template ignores 1.65.x. Move every repo together once a release carries Firefox r1575 or later
+(the workspace's `docs/operations/PLAYWRIGHT_UPGRADE.md` has the procedure).
