@@ -148,3 +148,7 @@ Playwright stays on 1.64.1 for now: 1.65.x bundles a Firefox (r1572) whose pages
 axe scan ([microsoft/playwright#43967](https://github.com/microsoft/playwright/issues/43967)), which the a11y sweep does on every
 page, and the synced Dependabot template ignores 1.65.x. Move every repo together once a release carries Firefox r1575 or later
 (the workspace's `docs/operations/PLAYWRIGHT_UPGRADE.md` has the procedure).
+
+## Open standards
+
+What this project speaks, what is planned and where you can extend it: [docs/INTEROP.md](docs/INTEROP.md).

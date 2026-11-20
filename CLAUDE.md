@@ -36,3 +36,7 @@ Shared frontend tooling, one subpath export per concern (see README). Source is 
 Bump `version`, push, tag `v<version>`; `npm-publish.yml` publishes with npm trusted publishing after `node-ci.yml` (audit, type-check,
 tests with Chromium, build, package contents) and the `node24-compat` floor job pass. Consumers pin `^0.0.x`, an exact pin on 0.0.x,
 so bump them together.
+
+## Interoperability
+
+- [docs/INTEROP.md](docs/INTEROP.md): the standards this project speaks, what is planned, where to extend it, and what proves each claim.
