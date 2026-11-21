@@ -1,3 +1,8 @@
+/**
+ * Tests for the favicon plugin (`brandIcons`, `src/vite.js`) and for `mw-sync` refusing an app's own icons. A fake `node_modules` with the
+ * two packages the plugin reads (`@meddleware/ui` brand files and the design tokens) is built in a temp directory, and the process moves
+ * into it, because the plugin resolves them from the working directory.
+ */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -5,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { brandIcons, meddlewareApp } from '../src/vite.js'
 import { sync } from '../src/sync.js'
 
+/** The temp directory standing in for an app. */
 let root: string
 const cwd = process.cwd()
 beforeEach(() => {
@@ -24,6 +30,11 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true })
 })
 
+/**
+ * The plugin's hooks, typed loosely because the tests call them without Vite.
+ * @param name - the app name for the manifest
+ * @returns the plugin object
+ */
 const plugin = (name?: string) => brandIcons({ name }) as unknown as {
   generateBundle: (this: { emitFile: (f: { fileName: string; source: unknown }) => void }) => void
   transformIndexHtml: () => { tag: string; attrs: Record<string, string> }[]
@@ -58,6 +69,7 @@ describe('brandIcons', () => {
     expect(next).toHaveBeenCalled()
   })
 
+  // The default build must carry the icons without every app adding the plugin itself.
   it('is part of meddlewareApp', () => {
     const cfg = meddlewareApp({ plugins: [] })({ mode: 'production', command: 'build' }) as { plugins: { name: string }[] }
     expect(cfg.plugins.map((p) => p.name)).toContain('meddleware:brand-icons')

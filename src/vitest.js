@@ -60,12 +60,13 @@ export function installDialogShim() {
  * export default defineConfig(vueTestConfig({ plugins: [vue()] }))
  * ```
  *
- * @param {object} options
+ * @param {object} options - the repository's settings
  * @param {import('vite').PluginOption[]} options.plugins The Vue plugin (and any other the tests need).
  * @param {import('vitest/config').TestUserConfig} [options.test] Overrides merged into `test` (`include`, `setupFiles`, `environment` …).
  * @returns {import('vitest/config').ViteUserConfig & { test: import('vitest/config').TestUserConfig }}
  */
 export function vueTestConfig({ plugins, test = {} }) {
+  // A repository's own `inline` list is added to ours, not substituted for it; `true` (inline everything) already includes ours.
   const inline = test.server?.deps?.inline
   return {
     plugins,

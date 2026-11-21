@@ -1,3 +1,7 @@
+/**
+ * Tests for the "nothing stored before an action" check (`src/storage.js`) against a real Chromium: it names each kind of storage a page
+ * writes on load and each other host it asks for, and it accepts exactly the keys it is told to allow.
+ */
 import { chromium, type Browser, type Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { expectNothingStored, readDeviceState, watchOtherHosts } from '../src/storage.js'
@@ -12,13 +16,20 @@ afterAll(async () => {
   await browser.close()
 })
 
+/** A fake https origin: storage needs a real origin, and `setContent` pages have none. */
 const ORIGIN = 'https://site.example'
 
+/**
+ * Serve a page whose script is the given text, and load it.
+ * @param script - what the page runs on load
+ * @returns the loaded page and the other hosts it asked for
+ */
 const open = async (script: string): Promise<{ page: Page; otherHosts: Set<string> }> => {
   const page = await (await browser.newContext()).newPage()
   await page.route(`${ORIGIN}/**`, (route) =>
     route.fulfill({ contentType: 'text/html', body: `<!doctype html><html lang="en"><title>t</title><main><p>x</p></main><script>${script}</script></html>` }),
   )
+  // Any other host is refused, as `offline` does in the real suites; the request is still seen by `watchOtherHosts`.
   await page.route(/^https:\/\/(?!site\.example)/, (route) => route.abort())
   const otherHosts = watchOtherHosts(page)
   await page.goto(`${ORIGIN}/`)

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Documentation pass (line-level annotation): every source file, test, template, workflow and configuration file explains itself; a Development
+  section in the README; Commands, Gotchas and Related sections in CLAUDE.md; CONTRIBUTING.md and AGENTS.md. The shared templates
+  (`dependabot.app.yml`, `postcss.config.js`, `stylelint.config.js`) gained header and why-comments, so apps running `mw-sync --check` see a
+  difference until they take this release and run `mw-sync --write`.
+- `templates/audit-allowlist.lhci.json` is now an empty list. Its one entry, the picomatch advisory GHSA-fc5q-39xc-vjpf, has been withdrawn
+  by GitHub, so every app's copy only produced a "no longer matches an advisory" warning. Apps with `"lhci": true` take the empty list from
+  `mw-sync --write`.
+- `.github/audit-gate.mjs` is removed from this repository: its CI runs `src/audit-gate.js` (the same code, shipped as `mw-audit-gate`) directly.
+  The empty `.github/audit-allowlist.json` is removed with it (a missing file means nothing is accepted).
+
+### Fixed
+- The `mw-check-csp-inline` test now checks what its title claimed: an inline script whose `sha256` the policy allows passes, and the same
+  script is named when the policy does not allow it (it only tested the refusals). A test title in `ports.test.ts` said 4000 where it asserts 4100.
+
 ## [0.0.16] - 2026-11-19
 
 ### Added

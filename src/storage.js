@@ -25,13 +25,17 @@ import { offline } from './look.js'
 
 /**
  * Read everything a page could have stored, plus the other hosts it asked for (recorded by {@link watchOtherHosts}).
- * @param {import('@playwright/test').Page} page
- * @param {Set<string>} [otherHosts]
- * @returns {Promise<DeviceState>}
+ * @param {import('@playwright/test').Page} page - the page to inspect
+ * @param {Set<string>} [otherHosts] - the hosts `watchOtherHosts` recorded
+ * @returns {Promise<DeviceState>} everything found
  */
 export async function readDeviceState(page, otherHosts = new Set()) {
   const inPage = await page.evaluate(async () => {
-    /** @param {() => unknown} f */
+    /**
+     * Run a read that a browser may refuse (storage blocked, an API missing) and fall back instead of failing the whole check.
+     * @param {() => unknown} f - the read
+     * @param {unknown} [fallback] - what to return when it throws
+     */
     const safe = async (f, fallback = /** @type {unknown} */ ([])) => {
       try {
         return await f()
@@ -66,6 +70,7 @@ export function watchOtherHosts(page) {
   page.on('request', (request) => {
     const url = new URL(request.url())
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return
+    // Before the first navigation the page is about:blank, so its own host is that of the request itself.
     const own = new URL(page.url() === 'about:blank' ? request.url() : page.url()).host
     if (url.host !== own && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') hosts.add(url.host)
   })
@@ -74,8 +79,8 @@ export function watchOtherHosts(page) {
 
 /**
  * Fail if the page has stored anything, or asked another host for anything, other than the `allow`ed keys and cookie names.
- * @param {import('@playwright/test').Page} page
- * @param {{ allow?: string[], otherHosts?: Set<string> }} [options]
+ * @param {import('@playwright/test').Page} page - the page to inspect
+ * @param {{ allow?: string[], otherHosts?: Set<string> }} [options] - `allow`: keys and cookie names a ledger row allows; `otherHosts`: from `watchOtherHosts`
  */
 export async function expectNothingStored(page, { allow = [], otherHosts } = {}) {
   const state = await readDeviceState(page, otherHosts)

@@ -1,3 +1,7 @@
+/**
+ * Tests for `expectAccessible` (`src/axe.js`) and the shared constants (`src/index.js`), against a real Chromium: the AA gate, the AAA
+ * `gate` and `off` modes, and the include, exclude and disable options.
+ */
 import { chromium, type Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { AXE_TAGS_AA, AXE_TAGS_AAA, BROWSER_PROJECTS } from '../src/index.js'
@@ -14,6 +18,11 @@ afterAll(async () => {
   await browser.close()
 })
 
+/**
+ * A complete HTML document around a body (axe wants a title, a language and a main landmark, or it reports those instead).
+ * @param body - the markup inside `<main>`
+ * @returns the document text
+ */
 const page = (body: string) => `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`
 
 describe('expectAccessible', () => {
@@ -30,6 +39,7 @@ describe('expectAccessible', () => {
   })
 
   it('gates on AAA enhanced contrast when asked, and passes AA-only text when not', async () => {
+    // #767676 on white is 4.54:1: it passes AA (4.5:1) and fails AAA (7:1), the one band where the two modes differ.
     const aaOnly = '<h1>Title</h1><p style="color:#767676">Grey text on white: 4.54:1, AA but not AAA</p>'
     const p = await (await browser.newContext()).newPage()
     await p.setContent(page(aaOnly))

@@ -1,11 +1,15 @@
+// Build settings (`npm run build`): emit dist/*.d.ts from the JSDoc types in src/*.js, so TypeScript consumers get types for every subpath.
+// Only declarations are emitted: consumers load src/*.js itself (package.json `exports`).
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
+    // dist/ mirrors src/ (a11y.js → a11y.d.ts).
     "rootDir": "./src",
     "declarationDir": "./dist"
   },
+  // The tests and the CommonJS browserslist file are type-checked but not emitted.
   "include": ["src/**/*.js"]
 }

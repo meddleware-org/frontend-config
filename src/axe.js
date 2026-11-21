@@ -6,12 +6,17 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { AXE_TAGS_AA, AXE_TAGS_AAA } from './index.js'
 
-/** @param {import('axe-core').Result[]} violations */
+/**
+ * Reduce axe's violations to what a failing test needs to show: the rule, its impact, and the first few offending nodes.
+ * @param {import('axe-core').Result[]} violations - axe's findings
+ * @returns {{ rule: string, impact: string | null | undefined, help: string, nodes: string[] }[]} a compact, comparable list (empty when clean)
+ */
 function describe(violations) {
   return violations.map((v) => ({
     rule: v.id,
     impact: v.impact,
     help: v.help,
+    // Six nodes are enough to find the pattern; a page-wide failure would otherwise print hundreds.
     nodes: v.nodes.slice(0, 6).map((n) => `${n.target.join(' ')} — ${n.failureSummary?.split('\n').slice(0, 3).join(' | ')}`),
   }))
 }
@@ -19,10 +24,12 @@ function describe(violations) {
 /**
  * Fail on any WCAG 2.2 A/AA (or best-practice) violation. AAA findings: `aaa: 'gate'` fails on them, `'report'` (default)
  * attaches them to the test as `aaa` annotations, `'off'` skips the AAA run.
- * @param {import('@playwright/test').Page} page
- * @param {{ include?: string, exclude?: string[], disableRules?: string[], aaa?: 'gate' | 'report' | 'off' }} [options]
+ * @param {import('@playwright/test').Page} page - the page, already in the state to check
+ * @param {{ include?: string, exclude?: string[], disableRules?: string[], aaa?: 'gate' | 'report' | 'off' }} [options] - `include` and
+ *   `exclude`: CSS selectors to limit the scan; `disableRules`: axe rule ids that do not apply to this state; `aaa`: how AAA findings count
  */
 export async function expectAccessible(page, options = {}) {
+  // One scan per tag set, so the AA gate and the AAA report are independent: an AAA finding never hides an AA one.
   const build = (/** @type {readonly string[]} */ tags) => {
     let b = new AxeBuilder({ page }).withTags([...tags]).disableRules(options.disableRules ?? [])
     if (options.include) b = b.include(options.include)

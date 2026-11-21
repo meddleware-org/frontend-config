@@ -24,7 +24,11 @@ export const E2E_MARKERS = Object.freeze([
   { name: '__getSuiClient hook', re: /__getSuiClient/ },
 ])
 
-/** @param {string} dir @returns {Generator<string>} */
+/**
+ * Every built `.js`, `.mjs` and `.html` file under a directory, depth first.
+ * @param {string} dir - the directory to walk
+ * @returns {Generator<string>} the file paths
+ */
 function* files(dir) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name)
@@ -35,14 +39,15 @@ function* files(dir) {
 
 /**
  * Scan the built files under `dist` for the harness.
- * @param {string} dist The build output directory.
- * @param {{ also?: (string | RegExp)[] }} [options] Extra markers: an app's own stand-in (a string is matched literally).
- * @returns {{ scanned: number, hits: string[] }}
- * @throws When `dist` cannot be read.
+ * @param {string} dist - the build output directory
+ * @param {{ also?: (string | RegExp)[] }} [options] - `also`: extra markers, an app's own stand-in (a string is matched literally)
+ * @returns {{ scanned: number, hits: string[] }} how many files were read, and `file: marker` for every hit
+ * @throws {Error} when `dist` cannot be read
  */
 export function scanBundle(dist, { also = [] } = {}) {
   const markers = [
     ...E2E_MARKERS,
+    // A string marker is escaped so text such as `e2e.session` matches itself and not any character in the dot's place.
     ...also.map((m) => ({ name: `marker ${String(m)}`, re: typeof m === 'string' ? new RegExp(m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) : m })),
   ]
   let scanned = 0

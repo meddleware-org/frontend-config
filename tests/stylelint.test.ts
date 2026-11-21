@@ -1,11 +1,23 @@
+/**
+ * Tests for the shared Stylelint configuration (`src/stylelint.js`): the token-only rules and their severities, the accessibility rules,
+ * the browser-support check, and the Vue single-file-component handling. Each case lints a small stylesheet.
+ */
 import stylelint from 'stylelint'
 import { describe, expect, it } from 'vitest'
 import { stylelintConfig } from '../src/stylelint.js'
 
+/**
+ * Lint some CSS (or a Vue file's styles) with the shared configuration.
+ * @param code - the source text
+ * @param options - the options `stylelintConfig` takes
+ * @param codeFilename - the name it is linted as (`.vue` selects the HTML syntax)
+ * @returns each warning's rule and severity
+ */
 async function warnings(code: string, options?: Parameters<typeof stylelintConfig>[0], codeFilename = 'a.css') {
   const { results } = await stylelint.lint({ code, codeFilename, config: stylelintConfig(options) })
   return results[0]!.warnings.map((w) => ({ rule: w.rule, severity: w.severity }))
 }
+/** Just the rule names of some warnings. */
 const rulesOf = (w: { rule: string }[]) => w.map((x) => x.rule)
 
 describe('stylelintConfig', () => {

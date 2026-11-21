@@ -7,10 +7,11 @@ export const E2E_ADDRESS = `0x${'a'.repeat(64)}`
 
 /**
  * Connect the mock wallet as a visitor would: open the wallet dialog, choose the wallet, and wait for the dialog to close.
- * @param {import('@playwright/test').Page} page
- * @param {{ wallet?: string, trigger?: string | RegExp }} [options] The wallet's name in the picker; the name of the button that opens the dialog.
+ * @param {import('@playwright/test').Page} page - the page, with the mock wallet registered
+ * @param {{ wallet?: string, trigger?: string | RegExp }} [options] - `wallet`: the wallet's name in the picker; `trigger`: the name of the button that opens the dialog
  */
 export async function connectMockWallet(page, { wallet = 'Test Wallet', trigger = 'Connect wallet' } = {}) {
+  // `.first()`: a header and a page body can both offer the button; either opens the same dialog.
   await page.getByRole('button', { name: trigger }).first().click()
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: wallet }).click()
@@ -32,6 +33,7 @@ export async function connectMockWallet(page, { wallet = 'Test Wallet', trigger 
  * @param {{ address?: string }} [options] The address the wallet connects with: the signer's own, so the transaction's sender and its signature agree.
  */
 export async function exposeSigner(page, signer, { address } = {}) {
+  // Each hook is installed only when given, so a test that only signs messages leaves transactions to the page's own stub.
   if (address) await page.addInitScript((a) => Object.assign(window, { __e2eWalletAddress: a }), address)
   if (signer.signTransaction) await page.exposeFunction('__e2eSignTransaction', signer.signTransaction)
   if (signer.signPersonalMessage) await page.exposeFunction('__e2eSignPersonalMessage', signer.signPersonalMessage)

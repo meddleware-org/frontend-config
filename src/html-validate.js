@@ -19,15 +19,17 @@ export const UI_ELEMENTS = Object.freeze({
 })
 
 /**
- * @param {object} [options]
+ * The html-validate configuration for Vue templates.
+ * @param {object} [options] - repository-specific additions
  * @param {Record<string, unknown>} [options.elements] Extra element descriptions.
  * @param {Record<string, unknown>} [options.rules] Rule overrides.
- * @returns {import('html-validate').ConfigData}
+ * @returns {import('html-validate').ConfigData} the configuration an `.htmlvalidate.mjs` exports
  */
 export function htmlValidateConfig({ elements = {}, rules = {} } = {}) {
   return {
     plugins: [/** @type {import('html-validate').Plugin} */ (/** @type {unknown} */ (htmlValidateVue))],
     extends: ['html-validate:recommended', 'html-validate:a11y', 'html-validate-vue:recommended'],
+    // `html5` is the base vocabulary; the `@meddleware/ui` components are described on top of it, and a repository's own come last so they win.
     elements: ['html5', ({ ...UI_ELEMENTS, ...elements })],
     transform: { '^.*\\.vue$': 'html-validate-vue' },
     rules: {

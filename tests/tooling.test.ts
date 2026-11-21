@@ -1,3 +1,8 @@
+/**
+ * Tests for the smaller builders: the PostCSS config, the Vite target and theme plugin, the Playwright config, the looks, the Lighthouse
+ * config, the Vitest settings and the dialog shim, and the e2e-mode guard. Each is a pure function of its inputs (or of a few environment
+ * variables, restored after every case), so they run without a browser.
+ */
 import autoprefixer from 'autoprefixer'
 import postcss from 'postcss'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -8,6 +13,7 @@ import { rmSync, writeFileSync } from 'node:fs'
 import { assertE2eOnlyInE2eMode, themeInit, viteTarget } from '../src/vite.js'
 import { SEASONS, THEMES, VIEWPORTS, looks } from '../src/look.js'
 
+// The PostCSS config is only autoprefixer, so what matters is that it prefixes something the supported browsers still need.
 describe('postcss', () => {
   it('prefixes what the supported browsers still need', async () => {
     const out = await postcss(postcssConfig.plugins).process('a { user-select: none; }', { from: undefined })
@@ -16,6 +22,7 @@ describe('postcss', () => {
   })
 })
 
+// The target comes from browserslist-to-esbuild: one esbuild target per engine in the support promise.
 describe('vite target', () => {
   it('maps the browserslist to build targets for every engine in the support promise', () => {
     const t = viteTarget(['last 2 Chrome versions', 'last 2 Safari versions', 'last 2 Firefox versions'])
@@ -30,10 +37,12 @@ describe('vite target', () => {
 })
 
 describe('definePlaywrightConfig', () => {
+  // The config reads CI, SHOTS and E2E_BROWSERS from the environment; each case sets what it needs and the environment is restored after.
   const saved = { ...process.env }
   afterEach(() => {
     process.env = { ...saved }
   })
+  /** Remove the variables the config reads, so a case starts from a developer's machine, not CI. */
   const clean = () => {
     delete process.env.CI
     delete process.env.SHOTS
@@ -83,6 +92,7 @@ describe('definePlaywrightConfig', () => {
   })
 })
 
+// The matrix the screenshots and the axe sweeps both iterate: a look added to `look.js` is covered by both.
 describe('looks', () => {
   it('covers every theme × season on desktop and each theme on tablet and phone', () => {
     const l = looks()
@@ -93,6 +103,7 @@ describe('looks', () => {
   })
 })
 
+// Accessibility is the one hard gate in Lighthouse CI; performance and weight only warn.
 describe('lighthouseConfig', () => {
   it('gates accessibility at 100 and warns on weight', () => {
     const c = lighthouseConfig({ port: 4181, paths: ['/', '/blockchain'] })
@@ -103,6 +114,7 @@ describe('lighthouseConfig', () => {
   })
 })
 
+// Vitest matches `server.deps.inline` patterns against the module's resolved file path, not its package name, so the patterns are paths.
 describe('vitest settings', () => {
   it('lists the UI libraries that import CSS or .vue files, and nothing else (matched by file path, as Vitest does)', async () => {
     const { inlineMeddleware } = await import('../src/vitest.js')
@@ -117,6 +129,7 @@ describe('vitest settings', () => {
   })
 })
 
+// jsdom has no <dialog> modality, so the shim is checked against a jsdom window borrowed for the case.
 describe('installDialogShim', () => {
   it('models showModal, close and returnValue for jsdom', async () => {
     const { JSDOM } = await import('jsdom')
@@ -148,7 +161,12 @@ describe('installDialogShim', () => {
 })
 
 describe('themeInit', () => {
+  /** A stand-in for `@meddleware/ui`'s theme script, written and removed around each case. */
   const script = 'tests/.theme-init-fixture.js'
+  /**
+   * The plugin with its hooks typed loosely (the tests call them without Vite).
+   * @param options - overrides for the plugin options
+   */
   const make = (options = {}) => {
     writeFileSync(script, '/* theme-init */')
     return themeInit({ scriptPath: script, colors: { light: '#f7f4f1', dark: '#120e10' }, ...options }) as unknown as {
@@ -188,6 +206,7 @@ describe('themeInit', () => {
   })
 })
 
+// The guard that keeps the mock wallet out of a production build: VITE_E2E set outside `--mode e2e` is a build error, not a silent no-op.
 describe('assertE2eOnlyInE2eMode', () => {
   it('lets the e2e mode set VITE_E2E, and any mode leave it unset', () => {
     expect(() => assertE2eOnlyInE2eMode('e2e', { VITE_E2E: '1' })).not.toThrow()

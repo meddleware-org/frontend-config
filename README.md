@@ -25,7 +25,7 @@ same accessibility and browser-support bar.
 | `/csp` | `buildCsp(options)`, `cspForProfile(name, current?)`, `PROFILES`, `scriptHashesOf(csp)` — the Content-Security-Policy every app image serves, as six named profiles (`static`, `static-strict`, `console`, `chain`, `chain-wasm`, `docs`), so the policy is written once. |
 | `mw-sync` | `mw-sync --check` / `--write` in a repository root: the files every frontend repository copies (dependabot.yml, .dockerignore, postcss/stylelint configs, the Lighthouse allowlist) equal this package's `templates/`, and the Dockerfile's `ARG CSP` equals its profile. Declared in package.json: `"meddleware": { "kind": "app", "csp": "chain-wasm", "lhci": true }`. |
 | `mw-network-status` | `mw-network-status --out src/network.json` (or `--check src/network.json` in CI): which networks Meddleware is deployed on, from the installed clients' deployment records (read as text: the clients ship TypeScript source). The file is committed and CI checks it, so "mainnet is coming" turns into "live" by the records alone. |
-| `mw-audit-gate` | CI dependency gate: `npm audit` at high/critical minus the dated, reasoned entries of `.github/audit-allowlist.json` (an entry with no reason or an expired date fails). |
+| `mw-audit-gate` | CI dependency gate: `npm audit` at high/critical minus the dated, reasoned entries of `.github/audit-allowlist.json` (an entry with no reason or an expired date fails; an entry that no longer matches an advisory is a warning to remove it). |
 | `mw-third-party-licenses` | Writes `dist/THIRD_PARTY_LICENSES` from the lockfile's production packages and their installed licence texts; `--check` fails when none can be written. |
 | `mw-check-csp-inline` | `mw-check-csp-inline <policy or @Dockerfile> [dist]`: every inline script in the built pages is allowed by a `sha256` source in the policy, and the policy never allows `'unsafe-inline'` scripts. |
 
@@ -148,6 +148,24 @@ Playwright stays on 1.64.1 for now: 1.65.x bundles a Firefox (r1572) whose pages
 axe scan ([microsoft/playwright#43967](https://github.com/microsoft/playwright/issues/43967)), which the a11y sweep does on every
 page, and the synced Dependabot template ignores 1.65.x. Move every repo together once a release carries Firefox r1575 or later
 (the workspace's `docs/operations/PLAYWRIGHT_UPGRADE.md` has the procedure).
+
+## Development
+
+There is no bundling step: the package ships `src/` as it is, plus the type declarations built from its JSDoc. The checks, all run in CI on every push:
+
+```bash
+npm ci                                  # install exactly the lockfile
+npx playwright install chromium         # the helper tests drive a real Chromium (CI does this too)
+npm run type-check                      # tsc --noEmit: src/*.js against its JSDoc types (checkJs), and the tests
+npm test                                # 138 tests: every export refused and allowed, the commands run as child processes
+npm run build                           # dist/*.d.ts
+node src/audit-gate.js                  # the dependency gate (the same code apps run as mw-audit-gate)
+npm pack --dry-run                      # what the tarball would contain
+```
+
+The shared files in `templates/` are copied into every app by `mw-sync`: changing one changes the file in every app with the next release, so a
+change there is announced in the changelog and the apps run `mw-sync --write` when they take it. How to propose a change is in
+[`CONTRIBUTING.md`](CONTRIBUTING.md); the rules for changing a helper are in [`CLAUDE.md`](CLAUDE.md).
 
 ## Open standards
 

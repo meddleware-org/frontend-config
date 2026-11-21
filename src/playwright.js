@@ -18,8 +18,9 @@ import { defineConfig, devices } from '@playwright/test'
  *   (the site must already be built, so the repo's `test:e2e` script builds first).
  * @param {string} [options.command] Full server command; replaces the one `kind` implies.
  * @param {BrowserSet} [options.browsers] Browser set; default from E2E_BROWSERS, else `all` in CI and `chromium` otherwise.
- * @param {string} [options.testDir]
+ * @param {string} [options.testDir] Where the specs are (default `./e2e`).
  * @param {import('@playwright/test').PlaywrightTestConfig} [options.extra] Merged over the defaults.
+ * @returns {import('@playwright/test').PlaywrightTestConfig} the object `playwright.config.ts` exports
  */
 export function definePlaywrightConfig({ port, kind = 'app', command, browsers, testDir = './e2e', extra = {} }) {
   const server = {
@@ -46,7 +47,9 @@ export function definePlaywrightConfig({ port, kind = 'app', command, browsers, 
     // `test()`, which for `defineShots` is shots.js, so a `playwright test e2e/screens.spec.ts` file filter would find none.)
     ...(process.env.SHOTS ? { testMatch: '**/screens.spec.ts' } : { testIgnore: ['**/screens.spec.ts'] }),
     fullyParallel: true,
+    // A stray `test.only` must not reach main: in CI it fails the run instead of silently skipping the rest.
     forbidOnly: !!process.env.CI,
+    // One retry in CI for a browser start-up flake; none locally, where a flake should be seen.
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
     use: { baseURL: `http://localhost:${port}`, viewport: { width: 1280, height: 900 }, trace: 'retain-on-failure' },

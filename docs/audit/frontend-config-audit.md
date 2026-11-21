@@ -4,11 +4,24 @@
 **Project:** repos/frontend-config (`@meddleware/frontend-config`) — shared frontend tooling: browserslist, ESLint (`vueApp`), Stylelint, html-validate, PostCSS, Vite target and `themeInit`, Playwright config, axe / accessibility sweep, screenshots, Lighthouse CI config, the mock-wallet Playwright helpers and the production-bundle scan.
 **Project type:** TS tooling package (JavaScript with JSDoc types and generated `.d.ts`; a dev dependency of sixteen repos; ships nothing to end users)
 **Template:** AUDIT_TEMPLATE.md (2026-11-01) + AUDIT_TEMPLATE_TS.md (2026-11-01) + AUDIT_TEMPLATE_A11Y.md (2026-11-01, tooling rows). Not triggered: `AUDIT_TEMPLATE_VUE.md` (it configures Vue projects but renders nothing and has no hosting path), `AUDIT_TEMPLATE_SUI_CLIENT.md` (its mock-wallet helper drives a *test* wallet in a browser; it builds, signs and verifies nothing on a chain), `AUDIT_TEMPLATE_IMG.md` (no image).
-**Deployment status:** *(Current, 2026-11-05: `0.0.2` is released to npm with provenance (CI green, trusted publishing); consumers take it through their own 2026-11-05 releases. The text below is the earlier history, kept as written.)* npm `@meddleware/frontend-config` 0.0.1 (released 2026-10-31, tag `v0.0.1`, publish run green, provenance attestation on the registry — checked 2026-11-01). Placeholder versions `0.0.0-rename.0` and `0.0.0-stage` also exist (F6). 0.0.2 released 2026-11-05 with the fixes of this audit (F1–F3). Consumers (devDependencies, `^0.0.1`): access-gate-ui, content-hub-ui, dashboard-ui, dev-site, docs-site, landing-site, roadmap-site, sealed-storage-ui, status-ui, token-issuance-ui, treasury-ui, ui, vitepress-theme, wallet-adapter, walrus-storage-kit, walrus-storage-ui.
-**Review date:** 2026-11-01
+Added 2026-11-21 (Part B documentation pass): `AUDIT_TEMPLATE_DOCS.md` (2026-11-20); `AUDIT_TEMPLATE_RFC.md` (2026-11-19), partial: the Content-Security-Policy profiles, the web manifest and favicon set, browserslist and the formats the tooling reads; `AUDIT_TEMPLATE_IOP.md` (2026-11-19), partial: public API, versioning and the shared templates; `AUDIT_TEMPLATE_PRIV.md` (2026-11-20), partial: what the package stores, requests or logs on a consumer's behalf, and the storage check it provides.
+**Deployment status:** *(Current, 2026-11-21: npm **`0.0.16` is `latest`** (SLSA v1 provenance; tag `v0.0.16` → `7ccd7d3`); two documentation commits since the tag, no code change. Nineteen consumers, all dev dependencies: `^0.0.16` in access-gate-ui, content-hub-ui, dashboard-ui, dev-site, docs-site, landing-site, link-in-bio-ui, roadmap-site, sealed-storage-ui, status-ui, token-issuance-ui, treasury-ui, walrus-storage-ui; `^0.0.14` in chain-payments-kit, dao-ui, ui, vitepress-theme, wallet-adapter, walrus-storage-kit. Dependabot group #9 (eight updates) is open with CI green. The two paragraphs below are history.)* *(Earlier, 2026-11-05: `0.0.2` is released to npm with provenance (CI green, trusted publishing); consumers take it through their own 2026-11-05 releases. The text below is the earlier history, kept as written.)* npm `@meddleware/frontend-config` 0.0.1 (released 2026-10-31, tag `v0.0.1`, publish run green, provenance attestation on the registry — checked 2026-11-01). Placeholder versions `0.0.0-rename.0` and `0.0.0-stage` also exist (F6). 0.0.2 released 2026-11-05 with the fixes of this audit (F1–F3). Consumers (devDependencies, `^0.0.1`): access-gate-ui, content-hub-ui, dashboard-ui, dev-site, docs-site, landing-site, roadmap-site, sealed-storage-ui, status-ui, token-issuance-ui, treasury-ui, ui, vitepress-theme, wallet-adapter, walrus-storage-kit, walrus-storage-ui.
+**Review date:** 2026-11-01; Part B documentation pass 2026-11-21 (DOCS, RFC, IOP and PRIV lenses first applied)
 **Reviewer:** Internal review
 **Severity ceiling:** Medium — it ships no code to end users and holds no keys, but it runs inside every consumer's lint, build and CI process, so a compromised release could weaken or bypass the gates (or execute in a build) in sixteen repos at once.
-**Status:** first-pass baseline 2026-11-01 (0.0.2 released 2026-11-05). 9 findings (1 Positive): 3 RESOLVED in source, 3 ADJUDICATED, 1 ACCEPTED-RISK, 1 DEFERRED (maintainer-only).
+**Status:** first-pass baseline 2026-11-01 (0.0.2 released 2026-11-05); documentation pass 2026-11-21 (0.0.16 current). 12 findings (1 Positive): 6 RESOLVED in source (F18 to F20 found 2026-11-21, unreleased), 3 ADJUDICATED, 1 ACCEPTED-RISK, 1 DEFERRED (maintainer-only).
+
+**Front matter (DOCS, RFC, IOP and PRIV lenses, added 2026-11-21):**
+
+| Field | Value |
+| --- | --- |
+| Documentation status | ledger (workspace `docs/audit/DOCS_LEDGER.tsv`): 65 tracked files, 62 done (55 measured against the thresholds; the other seven are strict JSON, the `dockerignore` file and similar, documented in the README and CLAUDE.md), 3 excluded (the lockfile, `LICENSE`, the generated `docs/INTEROP.md`), 0 pending, 0 fu (2026-11-21 pass) |
+| Required documents | README, CHANGELOG, SECURITY, CONTRIBUTING (added 2026-11-21), LICENSE (0BSD), CLAUDE.md, AGENTS.md (added 2026-11-21): all present |
+| Doc lints | `check-docs.mjs` (workspace) is the gate. The shared `eslint-plugin-jsdoc` fragment the standard plans for consumers is added to `src/eslint.js` in Phase 5 and then switched on in consumers |
+| Standards spoken | Content-Security-Policy (W3C CSP3) — implements the policy strings — `src/csp.js`; browserslist query syntax — implements the shared list — `src/browserslist-config.cjs`; Web App Manifest (W3C) — implements — `brandIcons`; WCAG 2.2 (W3C) via axe-core rules and the keyboard checks — implements the checks — `src/axe.js`, `src/a11y.js`; PECR Sch. A1 storage rule via the storage check — `src/storage.js`; ESLint flat configuration, Stylelint and html-validate configuration formats — implements — `src/eslint.js`, `src/stylelint.js`, `src/html-validate.js`; ECMAScript modules (ECMA-262), SPDX `0BSD`, Sigstore / SLSA — as the other packages |
+| Deviations | none |
+| Drafts relied on | none |
+| Data a person can take away | none: the package holds no data about anyone |
 
 ---
 
@@ -57,7 +70,7 @@ In scope: `src/*.js` (15 modules and the `.cjs` browserslist), `tests/*.ts` (9 f
 
 Out of scope: how each consumer configures and overrides the helpers (each consumer's audit), the design tokens, the third-party tools themselves.
 
-Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`; `node .github/audit-gate.mjs` (0 high/critical); `npm run type-check`; `npx vitest run` (9 files, 89 tests with a real Chromium; 79 before the fixes); `npm run build`; `npm pack --dry-run --json`; `npm view @meddleware/frontend-config versions dist.attestations.provenance`.
+Environment and commands (2026-11-21, Node 24.13 locally, Node 26 in CI, the Chromium the tests install): `npm ci`; `npm run type-check`; `npm test` (17 files, 138 tests); `npm run build`; `npm pack --dry-run --json` (58 files, nothing stray); `node src/audit-gate.js` (0 high/critical, no allow-list); actionlint 1.7.7 (the CI image, through podman). Earlier (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`; `node .github/audit-gate.mjs` (0 high/critical); `npm run type-check`; `npx vitest run` (9 files, 89 tests with a real Chromium; 79 before the fixes); `npm run build`; `npm pack --dry-run --json`; `npm view @meddleware/frontend-config versions dist.attestations.provenance`.
 
 ## Findings
 
@@ -118,6 +131,34 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 **Severity:** Positive
 **Evidence:** axe helper tests drive a real Chromium (a known violation is reported, a compliant page is not); stylelint/eslint/html-validate tests run the configs against violating and allowed fixtures; plugins and the standard config are resolved from this package (`import.meta.resolve`), so a pnpm or hoisted layout cannot change which rules apply; the browserslist test fails if the inlined copy drifts from the shared one; `offline(page)` makes every sweep hermetic (every non-local request is refused); `looks()` is one matrix for both screenshots and axe sweeps, so a look added there is covered by both.
 
+### Part B documentation pass (2026-11-21)
+
+Scope: every tracked file read against the workspace's `docs/operations/DOCUMENTATION_STANDARD.md` and annotated (Part B Phase 1, the third repository); the DOCS, RFC,
+IOP and PRIV lenses applied for the first time. Before and after editing: `npm ci`, the audit gate, type-check, the 17 test files (138 tests, one added), build, the package-contents check and actionlint passed. The diff is
+comment-only apart from F18 to F20: the JavaScript and TypeScript compile to identical output with comments removed (except `tests/bins.test.ts` and one test title in `tests/ports.test.ts`, F19),
+the YAML and JSONC parse to identical values (except the audit-gate command in `node-ci.yml`, F18), and `.gitignore` has the same patterns.
+
+### F18 — A withdrawn advisory is still allow-listed here and in the template every app copies
+**Severity:** Low   **Disposition:** RESOLVED here (2026-11-21, unreleased); the fourteen apps take it at the Phase 5 release (FU-0198)
+**Where:** `.github/audit-allowlist.json` (this repository), `templates/audit-allowlist.lhci.json` (copied into every app with `"lhci": true` by `mw-sync`), and `.github/audit-gate.mjs`.
+**Issue:** (1) the allow-list's only entry, GHSA-fc5q-39xc-vjpf (picomatch ReDoS), has been **withdrawn** on GitHub (checked 2026-11-21), so it matches nothing: the gate printed "no longer matches an advisory; remove it" in this repository and does so in the fourteen other repositories that carry the template (chain-payments-kit, access-gate-ui, dashboard-ui, landing-site, content-hub-ui, status-ui, docs-site, dev-site, link-in-bio-ui, sealed-storage-ui, roadmap-site, token-issuance-ui, treasury-ui, walrus-storage-ui); (2) `.github/audit-gate.mjs` was a second, un-annotated copy of `src/audit-gate.js` run by this repository's CI, one of the nine identical copies of FU-0196; (3) the executive summary says the audit gate has an empty allow-list, which was no longer true.
+**Impact:** none on security (a warning, not a failure). The stale entry was an accepted-risk record for an advisory that no longer exists, and an expired date would eventually have failed every app's CI over it.
+**Remediation / evidence:** the template is an empty list, this repository's allow-list file and its copy of the gate are removed, and its CI runs `node src/audit-gate.js` (the same code, shipped as `mw-audit-gate`); the gate prints no warning. The apps pick up the empty list with `mw-sync --write` when they take the release (CHANGELOG).
+
+### F19 — Two tests claimed more than they proved
+**Severity:** Low   **Disposition:** RESOLVED (2026-11-21, unreleased)
+**Where:** `tests/bins.test.ts` (`mw-check-csp-inline`), `tests/ports.test.ts`.
+**Issue:** the first test was titled "passes pages with no inline script and with an allowed one" but only tested a page with an external script; a `hash` constant and a `void hash` statement were left over from the case that was never written. A `ports.test.ts` title said the range is 4000 to 4999 while it asserts 4100.
+**Impact:** the allowed-by-hash path of `mw-check-csp-inline`, the one every VitePress site's image depends on, had no test.
+**Remediation / evidence:** a test computes the `sha256` of a real inline script, passes it in the policy (exit 0) and shows the hash is named when the policy lacks it (exit 1); the dead variable is gone; the title says 4100. 138 tests pass.
+
+### F20 — Documentation and audit drift found by the documentation pass
+**Severity:** Low   **Disposition:** RESOLVED (2026-11-21, unreleased)
+**Where:** this audit, `README.md`, `CLAUDE.md`, the workflows.
+**Issue:** this audit gave 0.0.2 as current, sixteen consumers and stylelint ^17 as a peer (it is ^18); said "fourteen subpaths" (nineteen `exports`) and 33 packaged files (58); the README had no Development section; CLAUDE.md had no Commands or Related section and did not say that a change to `templates/` reaches every app; the publish workflow said "Node 24 ships an older npm" in a job that runs Node 26.
+**Impact:** none on the code. A maintainer or a reviewer would have been misled about what is deployed and who consumes it.
+**Remediation / evidence:** the facts above are checked against npm and the consumers' manifests; the README has a Development section, CLAUDE.md Commands, Gotchas and Related sections; the workflow comment says why npm is pinned. FU-0196 is applied here (the second copy of the gate is gone).
+
 ---
 
 ## Section A — Invariant verification matrix
@@ -126,11 +167,11 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 | --- | --- | --- | --- | --- |
 | I1 | One browser support promise drives prefixing, both compat lints and the Vite target | `browserslist-config.cjs`, `postcss.js`, `stylelint.js`, `eslint.js`, `vite.js` | `browserslist.test.ts`, `tooling.test.ts` | HOLDS |
 | I2 | WCAG 2.2 A/AA is always a hard gate; AAA is `report` / `gate` / `off` by option | `axe.js`, `index.js` tags | `axe.test.ts` (5, real Chromium) | HOLDS |
-| I3 | The sweep covers reflow at 320 px, 200% text, forced colours, reduced motion, keyboard and focus-not-obscured | `a11y.js` | `a11y.test.ts` (15) | HOLDS (F2) |
+| I3 | The sweep covers reflow at 320 px, 200% text, forced colours, reduced motion, keyboard and focus-not-obscured | `a11y.js` | `a11y.test.ts` (18) | HOLDS (F2) |
 | I4 | Every look (theme × season; viewports) is shared by screenshots and sweeps | `look.js` | `tooling.test.ts` | HOLDS |
 | I5 | A production `dist/` containing the e2e harness fails the check | `bundle.js`, `check-prod-bundle.js` | `bundle.test.ts` (10) | HOLDS (F1) |
 | I6 | `VITE_E2E` in a non-e2e mode fails a build | `vite.js::assertE2eOnlyInE2eMode` | `tooling.test.ts` | HOLDS (F4) |
-| I7 | Colours and `z-index` come from tokens; no hex colour | `stylelint.js` (`color-no-hex`, `declaration-strict-value`) | `stylelint.test.ts` (13) | HOLDS |
+| I7 | Colours and `z-index` come from tokens; no hex colour | `stylelint.js` (`color-no-hex`, `declaration-strict-value`) | `stylelint.test.ts` (14) | HOLDS |
 | I8 | Template ARIA and label rules see through `@meddleware/ui` form components | `eslint.js`, `html-validate.js` | `eslint.test.ts` (11), `html-validate.test.ts` (8) | HOLDS |
 | I9 | Tooling resolves its own plugins, whatever the consumer's `node_modules` layout | `stylelint.js`, `html-validate.js` | `stylelint.test.ts`, `html-validate.test.ts` | HOLDS |
 | I10 | Lighthouse accessibility must score 100; weight is a warning | `lighthouserc.js` | `tooling.test.ts` | HOLDS |
@@ -147,10 +188,10 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 | `stylelint-config-standard`, `@double-great/stylelint-a11y`, `stylelint-declaration-strict-value`, `stylelint-no-unsupported-browser-features`, `postcss-html` | lockfile | lint time only | clean | |
 | `html-validate-vue`, `autoprefixer`, `browserslist-to-esbuild` | lockfile | build/lint time only | clean | |
 | `@meddleware/eslint-config` ^0.0.4 | lockfile | lint time only | audited separately | exact on 0.0.x |
-| peers: `@playwright/test` ~1.64.1, `eslint` ^10, `html-validate` ^11, `postcss` ^8.5, `stylelint` ^17 | consumer | | clean | optional where a subpath needs them |
+| peers: `@playwright/test` ~1.64.1, `eslint` ^10, `html-validate` ^11, `postcss` ^8.5, `stylelint` ^18 (2026-11-21; ^17 when first written) | consumer | | clean | optional where a subpath needs them |
 | caniuse-lite data (via browserslist) | lockfile | `browserslist` list ages | n/a | refreshed by Dependabot bumps |
 
-`node .github/audit-gate.mjs`: 0 high/critical advisories, allowlist empty (2026-11-01). The `@lhci/cli` advisories live in the twelve consumers, not here (D104; their audits).
+`node src/audit-gate.js`: 0 high/critical advisories, no allow-list (2026-11-21; on 2026-11-01 the gate was `.github/audit-gate.mjs` and the allow-list was empty, and the withdrawn advisory of F18 was added to it later). The `@lhci/cli` advisories live in the twelve consumers, not here (D104; their audits).
 
 ### B.2 Publish authority & CI
 
@@ -171,7 +212,7 @@ Environment and commands (2026-11-01, Node 26, npm 12): `npm ci`; `npm ls --all`
 
 ### B.TS-1 Packaging
 
-`files`: `src`, `dist`, `CHANGELOG.md`, `SECURITY.md` (F3). 33 files, 24 KiB before the additions: sources, declarations, no tests. CI asserts required files and rejects strays. `exports` list fourteen subpaths plus `bin`; types resolve to `dist/*.d.ts`.
+`files`: `src`, `dist`, `CHANGELOG.md`, `SECURITY.md` (F3). 58 files on 2026-11-21 (33 files, 24 KiB on 2026-11-01): sources, declarations, templates, the tsconfig preset, no tests. CI asserts required files and rejects strays. `exports` list nineteen subpaths (fourteen on 2026-11-01) plus six `bin` entries; types resolve to `dist/*.d.ts`.
 
 ### B.TS-2 Install-time code
 
@@ -181,9 +222,57 @@ No lifecycle script except `prepublishOnly: npm run build`. The `bin` file is pl
 
 Lockfile, `npm ci`, audit gate in CI and publish, exact `^0.0.x` range for consumers. First-party shared-tooling rule (TS lens): exact pin and lockfile — HOLDS in the sixteen consumers; provenance — HOLDS; minimal inventoried runtime dependencies — see F5 (accepted: they are the product); no publish credentials in consumers' verify jobs — HOLDS (publish jobs only); consumer bump together — a convention (CLAUDE.md), enforced by review; forced allowlist entries share one expiry (2027-01-31, D104) — HOLDS in the twelve consumers.
 
+### B.DOCS-1 Ledger state
+
+65 tracked files: 62 done (55 of them measured against the thresholds), 3 excluded (lockfile, licence text, generated `docs/INTEROP.md`), 0 pending, 0 `fu:` rows (2026-11-21, commit recorded in the ledger).
+
+### B.DOCS-2 Commands run
+
+Every command in the README's Development section, CLAUDE.md's Commands section and CONTRIBUTING.md was run on 2026-11-21 and gave what the documents say: `npm ci`,
+`npx playwright install chromium`, `npm run type-check`, `npm test` (138 tests), `npm run build`, `node src/audit-gate.js` (0 advisories), `npm pack --dry-run` (58 files).
+
+### B.DOCS-3 Generated documentation
+
+`docs/INTEROP.md` is generated by the workspace's `scripts/interop/gen-interop.py` from `config/interop.yaml` and checked there. `dist/*.d.ts` is generated from the JSDoc in `src/*.js`
+(`npm run build`) and is not tracked. `docs/` holds only this audit and the generated page.
+
+### B.RFC-1 Standards inventory
+
+| Interface | Standard (and version) | Role | Where | Conformance evidence | Deviation |
+| --- | --- | --- | --- | --- | --- |
+| Security policy | Content Security Policy Level 3 (W3C): directive and source-expression grammar | implements the strings the images serve | `src/csp.js` | `tests/csp.test.ts` reproduces the six policies the images served before profiles existed; `mw-check-csp-inline` hashes inline scripts as the browser does (SHA-256, base64) | — |
+| Support list | browserslist query syntax | implements the shared list | `src/browserslist-config.cjs` | `tests/browserslist.test.ts` resolves it and checks the engines it names and the ones it must not | — |
+| Icons and manifest | Web Application Manifest (W3C) | implements the manifest `brandIcons` emits | `src/vite.js` | `tests/brand-icons.test.ts` | the manifest is `display: browser` on purpose (web tools are not installable apps) |
+| Accessibility checks | WCAG 2.2 success criteria through axe-core tags (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, AAA) and the sweep's own checks for 1.4.10, 1.4.4, 2.3.3, 2.4.7 and 2.4.11 | implements the checks | `src/axe.js`, `src/a11y.js` | `tests/axe.test.ts`, `tests/a11y.test.ts` against a real Chromium | — |
+| Storage rule | PECR reg. 6 and Sch. A1 (UK) as the platform reads it | implements the check | `src/storage.js` | `tests/storage.test.ts`; the workspace's `docs/legal/STORAGE_LEDGER.md` | the legal reading is the legal register's, not this package's |
+| Tool configurations | ESLint flat config, Stylelint config, html-validate config | implements | `src/eslint.js`, `src/stylelint.js`, `src/html-validate.js` | each rule tested refused and allowed | — |
+| Status file | JSON (RFC 8259) | implements | `src/network-status.js` | `tests/network-status.test.ts` | — |
+| Module | ECMAScript modules (ECMA-262); CommonJS for the one browserslist file | implements | `src/*.js`, `src/browserslist-config.cjs` | the tests import every subpath as consumers do | — |
+| Provenance | Sigstore / SLSA (npm provenance) | consumes | `npm-publish.yml` | `dist.attestations` on npm, SLSA v1 (checked 2026-11-21) | — |
+
+### B.IOP-1 Export and exit drill
+
+Not applicable: the package holds no data about anyone. A consumer leaves by copying the config files it takes from here (every one is a one-line import or a plain template, 0BSD) and dropping the dependency.
+
+### B.IOP-2 Exit register entries
+
+npm (publication) and GitHub Actions (CI). The Playwright browsers are downloaded by the consumer's CI from Microsoft's CDN (not by this package). No run-time dependency.
+
+### B.IOP-3 API stability
+
+The public API is the nineteen subpaths and six commands in the README. Versioning is patch-only until mainnet (workspace policy), so a consumer's `^0.0.x` is an exact pin and nothing changes under it; every change that moves a template
+(`mw-sync` makes the apps' files differ until they take it) or a default severity is announced in `CHANGELOG.md` under the release that carries it. A rename or removal is a breaking change and is called out the same way.
+
+### B.PRIV-1 / B.PRIV-2 / B.PRIV-3 Privacy inventories
+
+Personal data: none. Client-side: the package stores nothing and requests nothing itself. `themeInit` and `brandIcons` add same-origin files and meta tags to a consumer's pages; the colour-mode script they load is `@meddleware/ui`'s
+(its storage is that package's ledger row), and nothing is requested from another host. `storage.js` is the check that proves a consumer stores nothing before an action. Logs: none (a build and test tool). Recorded 2026-11-21.
+
+---
+
 ## Section C — Test-coverage & hermetic/live split
 
-### C.1 Coverage grade — A− (89 tests, 9 files, vitest with a real Chromium, 2026-11-01)
+### C.1 Coverage grade — A− (138 tests, 17 files, vitest with a real Chromium, 2026-11-21; 89 tests in 9 files on 2026-11-01)
 
 | Dimension | Assessment |
 | --- | --- |
@@ -232,10 +321,26 @@ All hermetic: pages are `setContent` fixtures; Chromium is the only real browser
 - **FC-M4** MUST add any new test-wallet hook to `E2E_MARKERS` with the change that introduces it.
 - **FC-M5** MUST publish only through the tag-gated trusted-publisher workflow and keep runtime dependencies inventoried (F5).
 - **FC-M6** MUST keep every disabled rule's reason beside it (F8).
+- **FC-M7** MUST announce in the changelog any change to a file in `templates/`, because `mw-sync` makes it differ in every app until they take it (F18, B.IOP-3).
+
+**Lens baselines (DOCS, RFC, IOP, PRIV), first recorded 2026-11-21:**
+
+| ID | Holds? | Evidence |
+| --- | --- | --- |
+| DOCS-M1 | yes (all seven documents; 0BSD; CHANGELOG per release with an Unreleased section) | B.DOCS-1 |
+| DOCS-M2 | yes (every file's header and every declaration documented; ledger rows done) | `check-docs.mjs --report frontend-config` |
+| DOCS-M3 | yes (the options of every export are in the README and the JSDoc; the environment variables it reads, `CI`, `SHOTS`, `SHOTS_OUT`, `E2E_BROWSERS`, `PW_REUSE_SERVER`, `VITE_E2E`, are in the file headers and the README) | README, `src/*.js` |
+| DOCS-M4 | yes (commands run, links resolve, ids exist) | B.DOCS-2 |
+| DOCS-M5 | yes (no TODO, FIXME, XXX or HACK) | `check-docs.mjs` |
+| DOCS-M6 | yes (CLAUDE.md verified against the code and the consumers, F20; AGENTS.md points to it) | this pass |
+| DOCS-M7 | yes (no secrets or private data; the comments run in Node and the test browser, nothing reaches a visitor except the plugins' same-origin output, which carries no comments) | inspection |
+| RFC-M1 to RFC-M7 | yes where they apply (B.RFC-1); M5 is the hosts', not a package's | B.RFC-1 |
+| IOP-M3, IOP-M5 | yes (B.IOP-3; no data, no ads, no tracking); IOP-M1, M2, M4, M6, M7: not applicable (no data, no service) | B.IOP-1 to 3 |
+| PRIV-M1 to PRIV-M8 | not applicable to the package itself (nothing stored, requested or logged); the storage check it provides is how consumers meet PRIV-M2 | B.PRIV |
 
 ## Implementation suggestions (SHOULD / MAY)
 
-- **S1** SHOULD lint this package's own JavaScript (it type-checks with `checkJs` but runs no ESLint).
+- **S1** SHOULD lint this package's own JavaScript (it type-checks with `checkJs` but runs no ESLint). The documentation standard's `eslint-plugin-jsdoc` fragment is the natural first rule set (Phase 5).
 - **S2** MAY register a tiny Playwright self-test for `defineA11ySuite` (F7).
 - **S3** MAY add a Lighthouse budget check for `maxScriptKb` against a built fixture.
 
@@ -252,3 +357,12 @@ All hermetic: pages are `setContent` fixtures; Chromium is the only real browser
 ## Re-verification log
 
 - 2026-11-01 — first-pass baseline. Read every module and test; ran `npm ci`, `npm ls --all`, the audit gate (0), type-check, the tests (79 → 87, real Chromium), build and `npm pack --dry-run`; checked the registry (versions, provenance); listed every consumer and its dependency kind from the manifests (all devDependencies); recorded the AAA state (`aaa: 'gate'` in all twelve app/site sweeps). Fixed F1–F3 (0.0.2, unreleased at the time of writing). F6 handed to `OPERATOR_TASKS.md`.
+- 2026-11-21 — Part B documentation pass and first application of the DOCS, RFC, IOP and PRIV lenses (above, "Part B documentation pass"). Baseline before editing: `npm ci`, the audit gate, type-check, 137 tests in 17 files, build,
+  package contents, actionlint. Every tracked file annotated to the documentation standard (headers, TSDoc on every declaration, comments on why); `CONTRIBUTING.md` and `AGENTS.md` added; README Development section; CLAUDE.md
+  Commands, Gotchas and Related sections. Found and fixed **F18** (a withdrawn advisory still allow-listed, here and in the template every app copies; a duplicate copy of the gate), **F19** (a test that claimed the allowed-hash path
+  and did not test it; a wrong title) and **F20** (documentation and audit drift). Verified live: npm `0.0.16` latest with SLSA v1 provenance; nineteen consumers (thirteen on `^0.0.16`, six on `^0.0.14`); the picomatch advisory
+  withdrawn on GitHub; Dependabot group #9 open, CI green. Re-run after editing: the same commands, 138 tests, all passing; the diff proven comment-only apart from F18 to F20 (compiled output, parsed YAML and JSONC, `.gitignore`
+  patterns). Recorded outside the repository: FU-0196 applied here (the second copy of the gate is gone), FU-0198 (the apps take the templates at Phase 5). Counts: 11 dispositioned findings + 1 Positive (F9): 6 RESOLVED (F1 to F3, F18
+  to F20), 3 ADJUDICATED (F4, F7, F8), 1 ACCEPTED-RISK (F5), 1 DEFERRED (F6).
+- [x] 2026-11-21: Template line cites DOCS, RFC, IOP and PRIV with their registry dates; their front-matter fields, Section B subsections and MUST rows added; F18 to F20 recorded in the findings and the log; the deployment status,
+  consumers, packaging counts and test counts current.

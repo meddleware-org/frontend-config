@@ -8,13 +8,22 @@ import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import browserslistToEsbuild from 'browserslist-to-esbuild'
 
-/** @param {string | string[]} [queries] Browserslist queries; default: the repo's own configuration. */
+/**
+ * The esbuild targets for a set of browserslist queries.
+ * @param {string | string[]} [queries] - Browserslist queries; default: the repo's own configuration
+ * @returns {string[]} esbuild target names such as `chrome120`, one per engine in the list
+ */
 export function viteTarget(queries) {
   return browserslistToEsbuild(queries)
 }
 
-/** Resolve a package file from the app's own directory, where `@meddleware/ui` and the tokens are installed. */
-function resolveFromApp(/** @type {string} */ specifier) {
+/**
+ * Resolve a package file from the app's own directory, where `@meddleware/ui` and the tokens are installed (they are the app's dependencies,
+ * not this package's, so resolving from here would fail under pnpm or with a different version).
+ * @param {string} specifier - a package subpath, such as `@meddleware/ui/theme-init.js`
+ * @returns {string} the absolute file path
+ */
+function resolveFromApp(specifier) {
   return createRequire(join(process.cwd(), 'noop.js')).resolve(specifier)
 }
 
@@ -39,7 +48,9 @@ function resolveFromApp(/** @type {string} */ specifier) {
  * @returns {import('vite').Plugin}
  */
 export function themeInit({ default: mode = 'system', scriptPath, colors } = {}) {
+  /** The script's text, read on demand so a change to `@meddleware/ui` shows in dev without restarting. */
   const read = () => readFileSync(scriptPath ?? resolveFromApp('@meddleware/ui/theme-init.js'), 'utf8')
+  /** The `theme-color` of each mode: given, or the token page backgrounds so the browser chrome matches the page. */
   const chrome = () => {
     if (colors) return colors
     const { semantic } = JSON.parse(readFileSync(resolveFromApp('@meddleware/design-tokens/tokens.json'), 'utf8'))
@@ -138,7 +149,9 @@ const BRAND_FILES = /** @type {const} */ ({
  * @returns {import('vite').Plugin}
  */
 export function brandIcons({ name = 'Meddleware' } = {}) {
-  const read = (/** @type {string} */ file) => readFileSync(resolveFromApp(`@meddleware/ui/brand/${file}`))
+  /** A brand file's bytes. @param {string} file - a key of BRAND_FILES */
+  const read = (file) => readFileSync(resolveFromApp(`@meddleware/ui/brand/${file}`))
+  /** The web manifest, built from the tokens so its colours cannot drift from the page's. @returns {string} JSON */
   const manifest = () => {
     const { semantic } = JSON.parse(readFileSync(resolveFromApp('@meddleware/design-tokens/tokens.json'), 'utf8'))
     return JSON.stringify(
@@ -152,6 +165,7 @@ export function brandIcons({ name = 'Meddleware' } = {}) {
         ],
         theme_color: semantic.dark.bg,
         background_color: semantic.dark.bg,
+        // `browser`, not `standalone`: these are web tools, not installable apps, and the manifest only supplies the icons and colours.
         display: 'browser',
       },
       null,

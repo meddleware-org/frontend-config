@@ -11,25 +11,40 @@ import { join } from 'node:path'
 
 // The project root is the directory the command runs in (an app's npm script), not this package.
 const root = process.cwd()
+/** The app's lockfile: it names every installed package, and marks the ones only used to build (`dev`) or optional. */
 const lock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'))
 const check = process.argv.includes('--check')
+/** File names that carry a licence or notice text: LICENSE, LICENCE, NOTICE, COPYING, UNLICENSE, with or without an extension. */
 const LICENSE_FILE = /^(licen[cs]e|notice|copying|unlicense)(\.|$|-)/i
 
+/** The text of the output file, in pieces. */
 const out = []
+/** Packages that ship no licence file at all. */
 const missing = []
+/** The subset of those that declare Apache-2.0, which needs the licence text to accompany them (§4(a)). */
 const apacheMissing = []
-/** @param {any} pkg */
+/**
+ * The licence a package declares, whichever way its manifest spells it.
+ * @param {any} pkg - a package.json
+ * @returns {string} the SPDX expression, or the JSON of an older `licenses` field, or `unknown`
+ */
 const declared = (pkg) => (typeof pkg.license === 'string' ? pkg.license : JSON.stringify(pkg.license ?? pkg.licenses ?? 'unknown'))
-/** @param {any} pkg */
+/**
+ * Who to credit when a package ships no licence file: its author and repository.
+ * @param {any} pkg - a package.json
+ * @returns {string} `author · repository`, either part left out when missing
+ */
 const holder = (pkg) =>
   [pkg.author && (typeof pkg.author === 'string' ? pkg.author : pkg.author.name), pkg.repository && (typeof pkg.repository === 'string' ? pkg.repository : pkg.repository.url)]
     .filter(Boolean)
     .join(' · ')
+// Production packages only: what is bundled into the site. Build tools never reach a visitor, so their licences need not travel with it.
 const names = Object.keys(lock.packages)
   .filter((p) => p.startsWith('node_modules/') && !lock.packages[p].dev && !lock.packages[p].optional)
   .sort()
 for (const p of names) {
   const dir = join(root, p)
+  // A package the lockfile lists but this machine did not install (an optional platform build) has nothing to read.
   if (!existsSync(dir)) continue
   const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
   const files = readdirSync(dir).filter((f) => LICENSE_FILE.test(f)).sort()
@@ -67,10 +82,12 @@ if (apacheMissing.length > 0) {
     process.exit(1)
   }
 }
+// dist/ is the folder the site is served from, so the file is served at /THIRD_PARTY_LICENSES.
 mkdirSync(join(root, 'dist'), { recursive: true })
 writeFileSync(join(root, 'dist', 'THIRD_PARTY_LICENSES'), `${out.join('\n')}\n`)
 console.log(`THIRD_PARTY_LICENSES: ${names.length} production packages, ${missing.length} without a licence file`)
 if (missing.length) console.log(`  no licence file: ${missing.join(', ')}`)
+// `--check` also fails on an empty result: it means the lockfile held no production package, which is almost certainly the wrong directory.
 if (check && out.length === 0) {
   console.error('no production packages found in package-lock.json')
   process.exit(1)

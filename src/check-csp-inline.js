@@ -10,14 +10,17 @@ import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
+// Exit codes: 0 every inline script is allowed; 1 one is not (or script-src allows 'unsafe-inline'); 2 the command line or the build is wrong.
 const [source, dist = 'dist'] = process.argv.slice(2)
 if (!source) {
   console.error('usage: mw-check-csp-inline "<csp>"|@Dockerfile [distDir]')
   process.exit(2)
 }
 
+/** The policy to check: the argument itself, or the Dockerfile's default when it starts with `@`. */
 let csp = source
 if (source.startsWith('@')) {
+  // The Dockerfile is where the image's policy lives (`ARG CSP="…"`), so reading it here checks what is actually served.
   const m = readFileSync(source.slice(1), 'utf8').match(/^ARG CSP="([^"]*)"/m)
   if (!m?.[1]) {
     console.error(`CSP check: no 'ARG CSP="…"' default found in ${source.slice(1)}`)
@@ -26,16 +29,20 @@ if (source.startsWith('@')) {
   csp = m[1]
 }
 
+/** The tokens of the policy's `script-src` directive. */
 const scriptSrc = (csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src ')) ?? '').split(/\s+/)
+// 'unsafe-inline' would make every hash below meaningless, so it fails before any file is read.
 if (scriptSrc.includes("'unsafe-inline'")) {
   console.error("CSP check: script-src allows 'unsafe-inline'; the page must not.")
   process.exit(1)
 }
+/** The `sha256-…` hashes the policy allows, without their quotes (the form the hash of a script is compared in). */
 const allowed = new Set(scriptSrc.filter((t) => t.startsWith("'sha256-")).map((t) => t.slice(1, -1)))
 
 /**
- * @param {string} dir
- * @returns {Generator<string>}
+ * Every `.html` file under a directory, depth first.
+ * @param {string} dir - the directory to walk
+ * @returns {Generator<string>} the file paths
  */
 function* htmlFiles(dir) {
   for (const name of readdirSync(dir)) {
@@ -45,17 +52,22 @@ function* htmlFiles(dir) {
   }
 }
 
+/** Hash → the first file an unallowed inline script was seen in. */
 const missing = new Map()
+/** How many HTML files were read. */
 let files = 0
 for (const file of htmlFiles(dist)) {
   files++
   const html = readFileSync(file, 'utf8')
+  // An inline script is a <script> with no `src`; an external one is covered by `'self'`.
   for (const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)) {
     if (!m[1].trim()) continue
+    // The browser hashes the script's exact text (whitespace included), so the hash is taken the same way.
     const hash = 'sha256-' + createHash('sha256').update(m[1]).digest('base64')
     if (!allowed.has(hash)) missing.set(hash, file)
   }
 }
+// No HTML at all means the build has not run: failing is safer than reporting "every script is allowed" over nothing.
 if (files === 0) {
   console.error(`CSP check: no HTML file found in ${dist}; build first.`)
   process.exit(2)

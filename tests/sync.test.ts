@@ -1,3 +1,7 @@
+/**
+ * Tests for `mw-sync` (`src/sync.js`): the template files an app must keep identical, the Dockerfile CSP against its profile, and the
+ * command's exit codes, including when it is run through the symlink an installed bin is.
+ */
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -6,7 +10,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { cspForProfile } from '../src/csp.js'
 import { sync } from '../src/sync.js'
 
+/** Temp directories to remove after each test. */
 const dirs: string[] = []
+/**
+ * A repository with a `meddleware` section in its package.json.
+ * @param meddleware - the section's contents
+ * @param files - extra files, path → text
+ * @returns the repository's directory
+ */
 function repo(meddleware: object, files: Record<string, string> = {}): string {
   const d = mkdtempSync(join(tmpdir(), 'sync-'))
   dirs.push(d)
@@ -20,6 +31,7 @@ function repo(meddleware: object, files: Record<string, string> = {}): string {
 afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
+/** A minimal Dockerfile with the given policy as the `CSP` build-argument default. */
 const dockerfile = (csp: string) => `FROM scratch\nARG CSP="${csp}"\nRUN true\n`
 
 describe('mw-sync', () => {

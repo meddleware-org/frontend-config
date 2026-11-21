@@ -9,7 +9,11 @@ import postcssHtml from 'postcss-html'
 
 // Resolve plugins and the base config from THIS package, not the consumer's directory, so they are found however the consumer's
 // package manager lays out node_modules (stylelint otherwise resolves names relative to the consumer's config file).
-/** @param {string} name */
+/**
+ * Resolve a package name to an absolute file path from this package.
+ * @param {string} name - a package this package depends on
+ * @returns {string} its resolved entry file
+ */
 const here = (name) => fileURLToPath(import.meta.resolve(name))
 
 /** Colour-bearing properties: a literal colour here bypasses the design tokens (and so the seasons). */
@@ -19,12 +23,14 @@ const COLOUR_PROPERTIES = ['/color$/', 'fill', 'stroke', 'outline-color', 'text-
 const NEUTRAL_VALUES = ['transparent', 'inherit', 'currentColor', 'currentcolor', 'none', 'initial', 'unset', 'revert', 'auto', '0']
 
 /**
- * @param {object} [options]
+ * The Stylelint configuration of a Meddleware repository.
+ * @param {object} [options] - repository-specific settings
  * @param {'error' | 'warning' | false} [options.tokens] Severity of the token-only rule. Default `error`; a repo with
  *   literals still to fix starts at `warning` and moves to `error` in the same release as the fixes.
  * @param {'error' | 'warning'} [options.compat] Severity of unsupported-browser-feature findings. Default `error`.
  * @param {string[]} [options.browsers] Browsers to check against. Default: the repo's browserslist (the shared support promise).
  * @param {Record<string, unknown>} [options.rules] Rule overrides.
+ * @returns the configuration object `stylelint.config.js` exports
  */
 export function stylelintConfig({ tokens = 'error', compat = 'error', browsers, rules = {} } = {}) {
   return {
@@ -36,6 +42,7 @@ export function stylelintConfig({ tokens = 'error', compat = 'error', browsers, 
     ],
     overrides: [
       {
+        // postcss-html reads the <style> blocks of single-file components and HTML; plain `.css` files need no special syntax.
         files: ['**/*.vue', '**/*.html'],
         customSyntax: postcssHtml,
         rules: {

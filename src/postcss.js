@@ -4,4 +4,6 @@
 //   export { default } from '@meddleware/frontend-config/postcss'
 import autoprefixer from 'autoprefixer'
 
+// The only plugin: it reads the consumer's browserslist (which extends the shared support promise), so what gets prefixed follows from
+// that one list. Nothing else transforms the CSS, because the build ships what the tokens and components wrote.
 export default { plugins: [autoprefixer()] }

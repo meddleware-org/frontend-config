@@ -1,3 +1,6 @@
+# Node CI: lint the workflows, install, audit, type-check, test (with Chromium, for the accessibility helpers' own tests), build the type
+# declarations, and check what the npm tarball would contain; then run the tests again on the oldest supported Node. It runs on every push to
+# main and every pull request, and the release workflow (npm-publish.yml) calls it on the tagged commit so a tag that fails never publishes.
 name: Node CI
 
 on:
@@ -7,9 +10,11 @@ on:
   # The release workflow runs the same checks on the tagged commit.
   workflow_call:
 
+# Read-only: CI needs nothing but the checkout.
 permissions:
   contents: read
 
+# No tool may phone home from CI (the fleet's privacy rule; npm, Node and other tools honour it).
 env:
   DO_NOT_TRACK: "1"
 
@@ -18,33 +23,45 @@ jobs:
     name: Type-check & test
     runs-on: ubuntu-latest
     steps:
+      # Actions are pinned by full commit SHA with the version in a comment (D12).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Node 26 is the fleet baseline (D56); the `node24-compat` job below keeps the declared floor honest.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '26'
 
+      # Workflow syntax and expression check, from a digest-pinned image so the linter itself cannot change underneath us.
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo docker.io/rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 -color
 
+      # `npm ci` installs exactly the lockfile, so CI tests what was reviewed.
       - name: Install dependencies
         run: npm ci
 
+      # The package's own audit gate (the same code apps run as `mw-audit-gate`): high and critical advisories fail unless
+      # .github/audit-allowlist.json accepts them with a reason and an expiry. There is no such file today: nothing is accepted.
       - name: Audit dependencies
-        run: node .github/audit-gate.mjs
+        run: node src/audit-gate.js
 
+      # `checkJs` type-checks src/*.js through its JSDoc types, and the tests.
       - name: Type-check
         run: npm run type-check
 
+      # The accessibility, storage and wallet helpers are tested against a real browser, so Chromium is installed here.
       - name: Install Chromium (axe helper test)
         run: npx playwright install --with-deps chromium
 
+      # The tests: every export in both directions (CLAUDE.md, "Every export is proven by a test").
       - name: Test
         run: npm test
 
+      # Emits dist/*.d.ts, the types consumers import.
       - name: Build
         run: npm run build
 
+      # The tarball must hold what consumers import (the source, the templates, the tsconfig preset, the declarations) and nothing else: a
+      # stray file would publish whatever it contains.
       - name: Package contents
         run: |
           npm pack --dry-run --json > pack.json
@@ -57,6 +74,7 @@ jobs:
             if (stray.length) { console.error('unexpected files in the tarball:', stray); process.exit(1) }
           "
 
+  # Node 24 stays supported as a library floor (D56) although the main job runs Node 26, so this job runs the tests on the floor.
   node24-compat:
     name: Node 24 compatibility
     runs-on: ubuntu-latest

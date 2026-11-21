@@ -37,6 +37,29 @@ Bump `version`, push, tag `v<version>`; `npm-publish.yml` publishes with npm tru
 tests with Chromium, build, package contents) and the `node24-compat` floor job pass. Consumers pin `^0.0.x`, an exact pin on 0.0.x,
 so bump them together.
 
+## Commands
+
+```bash
+npm ci && npx playwright install chromium   # once; the helper tests need a browser
+npm run type-check && npm test              # what CI checks, short of the build and the tarball check
+npm run build && npm pack --dry-run         # dist/*.d.ts and the tarball's file list
+node src/audit-gate.js                      # the dependency gate
+```
+
+## Gotchas
+
+- **The templates reach every app.** `templates/*` are what `mw-sync --check` compares each app's files with. A change (even a comment) makes
+  every app's check fail until it takes the release and runs `mw-sync --write`. While annotating an app before the release, install this
+  checkout (`npm install --no-save ../frontend-config`) so its `mw-sync --check` sees the new templates.
+- **Playwright is pinned to 1.64.x** (README, "Peers"): the template's Dependabot ignore of 1.65.x and the peer range move together.
+- **`.github/audit-gate.mjs` is not here any more.** The gate is `src/audit-gate.js` (the `mw-audit-gate` bin) and this repository's CI
+  runs it directly; the nine identical copies in the other shared packages are FU-0196.
+
+## Related
+
+- The audit: [`docs/audit/frontend-config-audit.md`](docs/audit/frontend-config-audit.md).
+- How to propose a change: [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Interoperability
 
 - [docs/INTEROP.md](docs/INTEROP.md): the standards this project speaks, what is planned, where to extend it, and what proves each claim.

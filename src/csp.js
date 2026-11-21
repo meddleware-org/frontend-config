@@ -13,7 +13,10 @@
  * @property {string[]} [scriptHashes] `'sha256-…'` sources for the inline scripts a static-site generator emits
  */
 
-/** @type {Record<string, CspOptions>} */
+/**
+ * The named profiles a repository selects with `"meddleware": { "csp": "<name>" }` in package.json.
+ * @type {Record<string, CspOptions>}
+ */
 export const PROFILES = {
   /** Same-origin only: the landing page. */
   static: {},
@@ -30,8 +33,9 @@ export const PROFILES = {
 }
 
 /**
- * @param {CspOptions} options
- * @returns {string}
+ * Build the policy string for a set of options. Every policy starts from `default-src 'self'` and adds only what the profile needs.
+ * @param {CspOptions} options - the profile's switches (all default to the strictest setting)
+ * @returns {string} the `Content-Security-Policy` header value, directives separated by `; `
  */
 export function buildCsp(options = {}) {
   const { wasm = false, chain = false, worker = false, strict = false, frameAncestors = 'self', scriptHashes = [] } = options
@@ -40,11 +44,13 @@ export function buildCsp(options = {}) {
   const directives = [
     ["default-src", "'self'"],
     ['script-src', script.join(' ')],
+    // Inline styles stay allowed: Vue binds `style` attributes and scoped styles, and a style cannot run script (the script policy is the strict one).
     ['style-src', "'self' 'unsafe-inline'"],
     ['img-src', richImages ? "'self' data: blob: https:" : "'self' data:"],
     ['font-src', "'self' data:"],
     ['connect-src', chain ? "'self' https:" : "'self'"],
     ...(chain || worker ? [['worker-src', "'self' blob:"]] : []),
+    // No plugins, ever (the legacy <object> and <embed>).
     ['object-src', "'none'"],
     ['base-uri', strict ? "'none'" : "'self'"],
     ['form-action', strict ? "'none'" : "'self'"],
@@ -53,15 +59,27 @@ export function buildCsp(options = {}) {
   return [...directives.map(([d, v]) => `${d} ${v}`), 'upgrade-insecure-requests'].join('; ')
 }
 
-/** The `'sha256-…'` hashes in a policy's script-src (kept when a profile such as `docs` is rebuilt). */
-export function scriptHashesOf(/** @type {string} */ csp) {
+/**
+ * The `'sha256-…'` hashes in a policy's script-src (kept when a profile such as `docs` is rebuilt).
+ * @param {string} csp - a policy string
+ * @returns {string[]} the hashes, without their quotes
+ */
+export function scriptHashesOf(csp) {
   const src = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src ')) ?? ''
   return src.split(/\s+/).filter((t) => t.startsWith("'sha256-")).map((t) => t.slice(1, -1))
 }
 
-/** @param {string} name @param {string} [current] the policy now in the Dockerfile (its script hashes are kept) */
+/**
+ * The policy a named profile produces.
+ * @param {string} name - a key of {@link PROFILES}
+ * @param {string} [current] - the policy now in the Dockerfile (its script hashes are kept)
+ * @returns {string} the policy string
+ * @throws {Error} when the profile is unknown, listing the known ones
+ */
 export function cspForProfile(name, current = '') {
   const profile = PROFILES[name]
   if (!profile) throw new Error(`unknown CSP profile "${name}" (known: ${Object.keys(PROFILES).join(', ')})`)
+  // Only the docs profile carries hashes: VitePress emits a few small inline scripts whose hashes change with its version, and
+  // `mw-check-csp-inline` fails the build when they drift, so they are kept from the Dockerfile rather than invented here.
   return buildCsp({ ...profile, ...(name === 'docs' ? { scriptHashes: scriptHashesOf(current) } : {}) })
 }

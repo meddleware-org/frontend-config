@@ -1,8 +1,13 @@
+/**
+ * Tests for the two configuration builders apps call: `meddlewareApp` (the Vite config, `src/vite.js`) and `vueTestConfig` (the Vitest
+ * config, `src/vitest.js`): what each adds, what a repository can override, and that an override extends rather than replaces.
+ */
 import { describe, expect, it } from 'vitest'
 import { meddlewareApp } from '../src/vite.js'
 import { inlineMeddleware, vueTestConfig } from '../src/vitest.js'
 
 describe('meddlewareApp', () => {
+  /** The argument Vite passes a config function. */
   const env = { mode: 'production', command: 'build' } as const
   it('adds the theme plugin after the app plugins, a browserslist target and the wallet-adapter exclusion', () => {
     const cfg = meddlewareApp({ plugins: [{ name: 'a' }] })(env) as any
@@ -18,6 +23,7 @@ describe('meddlewareApp', () => {
     expect(cfg.optimizeDeps).toBeUndefined()
   })
   it('refuses VITE_E2E outside the e2e mode', () => {
+    // The variable is set for this case only and removed in `finally`, so it cannot leak into the other tests.
     process.env.VITE_E2E = '1'
     try {
       expect(() => meddlewareApp({ plugins: [] })(env)).toThrow(/VITE_E2E/)

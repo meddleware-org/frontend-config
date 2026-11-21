@@ -1,14 +1,21 @@
+// TypeScript settings for type-checking (`npm run type-check`). The package is plain JavaScript with JSDoc types, so TypeScript checks
+// src/*.js (`checkJs`) and the tests, and emits nothing; tsconfig.build.json extends this file to emit the declarations.
 {
   "compilerOptions": {
+    // Node 26 runs everything this package is used in (Vite, ESLint, Playwright), so no down-levelling is needed.
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "Bundler",
+    // The source is JavaScript: allow it and check it against its JSDoc types.
     "allowJs": true,
     "checkJs": true,
     "strict": true,
+    // Do not type-check the dependencies' own declaration files: their correctness is not this package's to prove.
     "skipLibCheck": true,
+    // Only Node's globals; the page-side code in the Playwright helpers runs inside `page.evaluate` callbacks and is typed there.
     "types": ["node"],
     "noEmit": true
   },
+  // browserslist-config.cjs is included so its shape is checked too, although it is CommonJS.
   "include": ["src/**/*.js", "src/**/*.cjs", "tests/**/*.ts"]
 }

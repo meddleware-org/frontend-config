@@ -1,3 +1,7 @@
+/**
+ * Tests for the Playwright side of the mock wallet (`src/wallet.js`): connecting through the app's dialog, and exposing a Node-side signer
+ * so a key never enters the page. Real Chromium, with a page that behaves like the wallet dialog.
+ */
 import { chromium, type Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { E2E_ADDRESS, connectMockWallet, exposeSigner } from '../src/wallet.js'
@@ -11,6 +15,7 @@ afterAll(async () => {
   await browser.close()
 })
 
+/** The page: a trigger opens a modal listing two wallets; choosing one writes its name and closes the modal. */
 const dialogPage = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
 <button id="open" type="button">Connect wallet</button><p id="who"></p>
 <dialog id="d"><h2>Select wallet</h2><menu><li><button type="button" id="a">Other Wallet</button></li><li><button type="button" id="b">Test Wallet</button></li></menu></dialog>
@@ -50,6 +55,7 @@ describe('exposeSigner', () => {
         return [await w.__e2eSignTransaction!('{}', 'sui:testnet'), await w.__e2eSignPersonalMessage!('AQID')]
       })
     expect(await call()).toEqual([{ bytes: 'bytes:{}', signature: 'sig:sui:testnet' }, { signature: 'msg:AQID' }])
+    // exposeFunction survives a navigation: the signer must still work on the next page the app loads.
     await page.goto('data:text/html,<main></main>')
     expect(await call()).toEqual([{ bytes: 'bytes:{}', signature: 'sig:sui:testnet' }, { signature: 'msg:AQID' }])
   })

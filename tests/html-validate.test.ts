@@ -1,12 +1,23 @@
+/**
+ * Tests for the shared html-validate configuration (`src/html-validate.js`): content models, the a11y preset, the Vue naming style, the
+ * `@meddleware/ui` element descriptions and the repository's own additions.
+ */
 import { HtmlValidate } from 'html-validate'
 import { describe, expect, it } from 'vitest'
 import { htmlValidateConfig } from '../src/html-validate.js'
 
+/**
+ * Validate a template and name what it reported.
+ * @param markup - the file's text
+ * @param fileName - the name it is validated as (`.vue` selects the Vue transform)
+ * @returns the rule id of every message
+ */
 async function problems(markup: string, fileName = 'A.vue') {
   const v = new HtmlValidate(htmlValidateConfig())
   const report = await v.validateString(markup, fileName)
   return report.results.flatMap((r) => r.messages.map((m) => m.ruleId))
 }
+/** A single-file component with just a template. */
 const sfc = (template: string) => `<template>\n${template}\n</template>\n`
 
 describe('htmlValidateConfig', () => {

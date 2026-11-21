@@ -1,11 +1,16 @@
+# Dependabot configuration of every Meddleware app: weekly, grouped updates for npm, the Dockerfile and GitHub Actions (D41), with the
+# majors the fleet declines written as ignore rules (D52). A template: `mw-sync` keeps this file identical in every `"kind": "app"`
+# repository, so a decision to decline or adopt an update is made here once and reaches every app with the next release of this package.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    # Few open pull requests at once: the groups below normally make it one or two a week.
     open-pull-requests-limit: 5
     ignore:
+      # TypeScript majors are adopted deliberately, fleet-wide, not by a bot (D52; TypeScript 7 is the next one).
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
       # Playwright 1.65.x ships a Firefox build that crashes pages when getByRole/getByLabel follow an axe scan
@@ -13,6 +18,7 @@ updates:
       - dependency-name: "@playwright/test"
         versions: ["1.65.x"]
     groups:
+      # Minor and patch updates arrive as one pull request, merged once CI passes (D41).
       npm-minor-patch:
         update-types: [minor, patch]
   - package-ecosystem: docker
@@ -21,6 +27,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     ignore:
+      # The Go toolchain in the static-server stage is pinned (D52): a minor or major bump is a deliberate change, patch updates are taken.
       - dependency-name: "golang"
         update-types: ["version-update:semver-minor", "version-update:semver-major"]
     groups:
@@ -32,5 +39,6 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
+      # Actions are pinned by full commit SHA (D12); one pull request moves every pin together.
       github-actions:
         patterns: ['*']

@@ -26,9 +26,10 @@ export const PRODUCTS = /** @type {const} */ ([
 
 /**
  * The network keys of `export const <constant> = { … }` in generated source: the keys at the object's top level (two-space indent).
- * @param {string} source
- * @param {string} constant
- * @returns {string[]}
+ * @param {string} source - the text of a generated `deployments.ts`
+ * @param {string} constant - the exported constant to read, such as `ACCESS_GATE_DEPLOYMENTS`
+ * @returns {string[]} the network names, for example `['testnet']`
+ * @throws {Error} when the constant is missing or the file's shape is not the generated one
  */
 export function networksOf(source, constant) {
   const start = source.indexOf(`export const ${constant} =`)
@@ -42,11 +43,15 @@ export function networksOf(source, constant) {
 /**
  * Which networks are live: `live` when every product has a record there, `partial` when some do, `coming` when none does. (The same rule as
  * `networkAvailability` in `@meddleware/web-utils`, which the dashboard uses at run time.)
- * @param {Record<string, string[]>} products product name → the networks it has a record for
+ * @param {Record<string, string[]>} products - product name → the networks it has a record for
+ * @returns for each network: `{ status, live, missing }`
  */
 export function availability(products) {
   const names = Object.keys(products)
-  /** @param {string} network */
+  /**
+   * One network's status.
+   * @param {string} network - `testnet` or `mainnet`
+   */
   const report = (network) => {
     const live = names.filter((p) => products[p]?.includes(network))
     const missing = names.filter((p) => !products[p]?.includes(network))
@@ -55,7 +60,12 @@ export function availability(products) {
   return { testnet: report('testnet'), mainnet: report('mainnet') }
 }
 
-/** @param {string} root */
+/**
+ * Read the network keys from each product's installed client package.
+ * @param {string} root - the repository to resolve the client packages from
+ * @returns {Record<string, string[]>} product name → the networks it has a record for
+ * @throws {Error} when a client package is not installed or its records have an unexpected shape
+ */
 export function readRecords(root) {
   const require = createRequire(join(root, 'noop.js'))
   /** @type {Record<string, string[]>} */

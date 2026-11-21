@@ -1,3 +1,8 @@
+/**
+ * Tests for `mw-network-status` (`src/network-status.js`): reading the network keys from generated deployment records, deciding live,
+ * partial or coming, and the command's write, check and symlinked-bin modes. The client packages are fakes built in temp directories, so
+ * a real release of a client (with a mainnet key) cannot change what these tests expect.
+ */
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -5,14 +10,27 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { availability, networksOf } from '../src/network-status.js'
 
+/** Temp directories to remove after each test. */
 const dirs: string[] = []
 afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
 
+/**
+ * The text of a generated `deployments.ts` with the given networks.
+ * @param constant - the exported constant's name
+ * @param networks - the network keys it holds
+ */
 const records = (constant: string, networks: string[]) =>
   `// Generated\nexport interface X { a: string }\nexport const ${constant} = {\n${networks.map((n) => `  ${n}: {\n    originalId: '0x1',\n  },\n`).join('')}} as const satisfies Record<string, X>\nexport type N = keyof typeof ${constant}\n`
 
+/**
+ * Install a fake client package whose `deployments.ts` holds the given networks.
+ * @param root - the repository to install it in
+ * @param name - the package name
+ * @param constant - the deployment constant's name
+ * @param networks - the network keys
+ */
 function fakePackage(root: string, name: string, constant: string, networks: string[]) {
   const dir = join(root, 'node_modules', ...name.split('/'))
   mkdirSync(join(dir, 'src'), { recursive: true })
@@ -21,6 +39,11 @@ function fakePackage(root: string, name: string, constant: string, networks: str
   writeFileSync(join(dir, 'src/deployments.ts'), records(constant, networks))
 }
 
+/**
+ * A repository with both client packages installed.
+ * @param mainnet - whether the records include a `mainnet` key
+ * @returns the repository's directory
+ */
 function repo(mainnet: boolean) {
   const d = mkdtempSync(join(tmpdir(), 'ns-'))
   dirs.push(d)
@@ -30,7 +53,9 @@ function repo(mainnet: boolean) {
   return d
 }
 
+/** The command's source file. */
 const cli = join(import.meta.dirname, '..', 'src', 'network-status.js')
+/** Run the command in a directory. */
 const run = (cwd: string, ...args: string[]) => spawnSync('node', [cli, ...args], { cwd, encoding: 'utf8' })
 
 describe('networksOf', () => {

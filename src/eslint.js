@@ -22,10 +22,12 @@ export const LABEL_COMPONENTS = Object.freeze(['UiFormField'])
  * @typedef {{ name?: string, files?: (string | string[])[], ignores?: string[], rules?: Record<string, unknown>, [key: string]: unknown }} FlatConfig
  */
 
+/** Where tests live: browser-API compatibility and strict typing do not apply to code that runs in Node or the test browser. */
 const TESTS = ['**/*.{test,spec}.{ts,tsx}', 'tests/**', 'e2e/**']
 
 /**
- * @param {object} options
+ * The ESLint flat configuration of a Meddleware Vue and TypeScript repository.
+ * @param {object} options - the repository's settings
  * @param {string} options.name Prefix for the config object names (usually the repo name).
  * @param {boolean} [options.sui] Append the Sui chain-access boundary (apps and tool libraries; not ui, tokens or sites).
  * @param {string[]} [options.ignores] Extra global ignores (for example `docs/api/**`).
@@ -38,6 +40,7 @@ export function vueApp({ name, sui = false, ignores = [], controlComponents = []
   return /** @type {FlatConfig[]} */ (defineConfigWithVueTs(
     { name: `${name}/files-to-lint`, files: ['**/*.{vue,ts,mts,tsx}'] },
 
+    // Build output, reports and the generated Lighthouse config are not source (`lighthouserc.cjs` is CommonJS the Vue rules cannot parse).
     globalIgnores(['**/dist/**', '**/gallery-dist/**', '**/coverage/**', '**/*.d.ts', '**/test-results/**', '**/playwright-report/**', '**/.lighthouseci/**', '**/lighthouserc.cjs', ...ignores]),
 
     ...pluginVue.configs['flat/essential'],
@@ -81,6 +84,7 @@ export function vueApp({ name, sui = false, ignores = [], controlComponents = []
       rules: { '@typescript-eslint/no-explicit-any': 'off' },
     },
 
+    // The repository's own additions come before the boundary: the boundary replaces restriction rules, so it must be last (eslint-config README).
     ...(/** @type {any[]} */ (extra)),
 
     ...(sui ? suiBoundary() : []),

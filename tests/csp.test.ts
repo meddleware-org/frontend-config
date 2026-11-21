@@ -1,3 +1,7 @@
+/**
+ * Tests for the CSP profiles (`src/csp.js`). The reference strings are the policies the images served before profiles existed, so a profile
+ * that drifts from them would change what a deployed site sends; and no profile may allow inline or eval script.
+ */
 import { describe, expect, it } from 'vitest'
 import { PROFILES, buildCsp, cspForProfile, scriptHashesOf } from '../src/csp.js'
 

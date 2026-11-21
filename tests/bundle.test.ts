@@ -1,3 +1,7 @@
+/**
+ * Tests for the production-bundle scan (`scanBundle`, `src/bundle.js`) and its command (`check-prod-bundle`): every window hook of the
+ * shared e2e harness is found, nothing else is, and a build that has not run cannot pass.
+ */
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -5,8 +9,15 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { E2E_MARKERS, scanBundle } from '../src/bundle.js'
 
+/** The command's source file, run directly with Node. */
 const CLI = join(import.meta.dirname, '..', 'src', 'check-prod-bundle.js')
+/** Temp directories to remove after each test. */
 const dirs: string[] = []
+/**
+ * Build a fake build output.
+ * @param files - path (relative to the output) → text
+ * @returns the output's directory
+ */
 function dist(files: Record<string, string>): string {
   const d = mkdtempSync(join(tmpdir(), 'bundle-'))
   dirs.push(d)
@@ -19,6 +30,7 @@ function dist(files: Record<string, string>): string {
 afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
 })
+/** Run the command with these arguments. */
 const run = (...args: string[]) => spawnSync('node', [CLI, ...args], { encoding: 'utf8' })
 
 describe('scanBundle', () => {
@@ -47,6 +59,7 @@ describe('scanBundle', () => {
     expect(scanBundle(d, { also: ['a.c'] }).hits).toEqual([])
   })
 
+  // A sourcemap can legitimately quote source that mentions a hook; only what ships to the browser as script or markup counts.
   it('ignores non-script files (a sourcemap or image is not scanned)', () => {
     expect(scanBundle(dist({ 'a.js': '', 'a.js.map': '__registerMockWallet', 'x.png': '__e2eAddress' })).hits).toEqual([])
   })

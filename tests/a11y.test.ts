@@ -1,3 +1,8 @@
+/**
+ * Tests for the accessibility assertions (`src/a11y.js`) against a real Chromium: each assertion fails for the fault it names and passes
+ * without it. The pages are inline HTML, so a case is the smallest page that shows one behaviour. These are the checks every app's sweep
+ * depends on, so a regression here would silently weaken every repository's gate.
+ */
 import { chromium, type Browser, type Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { expectKeyboardFocusVisible, expectNoHorizontalScroll, expectNoRunningAnimations, expectStickyHeaderHoldsStill } from '../src/a11y.js'
@@ -11,6 +16,12 @@ afterAll(async () => {
   await browser.close()
 })
 
+/**
+ * A fresh page with the given body and style, in a 400 × 600 window.
+ * @param body - the markup inside `<main>`
+ * @param head - CSS for the page
+ * @returns the loaded page (each case gets its own browser context, so no state leaks between cases)
+ */
 const open = async (body: string, head = ''): Promise<Page> => {
   const page = await (await browser.newContext({ viewport: { width: 400, height: 600 } })).newPage()
   await page.setContent(`<!doctype html><html lang="en"><head><title>t</title><style>${head}</style></head><body><main>${body}</main></body></html>`)
@@ -63,6 +74,7 @@ describe('expectKeyboardFocusVisible', () => {
       await expect(expectKeyboardFocusVisible(page)).rejects.toThrow(/hidden behind div.* when (focused|reached backwards)/)
     })
 
+    // The sweep clicks things before the keyboard walk; a hover tooltip left open by the pointer would cover the controls and fail the walk wrongly.
     it('ignores a tooltip that a stale pointer position would keep open (the pointer is parked first)', async () => {
       const css = 'a { outline: 2px solid blue; display: block; width: 100px; height: 30px; margin-bottom: 8px } #tip { display: none; position: fixed; left: 0; top: 0; width: 400px; height: 300px; background: #ccc } #one:hover ~ #tip { display: block }'
       const page = await open('<a id="one" href="#a">one</a><a href="#b">two</a><div id="tip">tip</div>', css)
@@ -70,6 +82,7 @@ describe('expectKeyboardFocusVisible', () => {
       await expectKeyboardFocusVisible(page)
     })
 
+    // WebKit animates the scroll that brings a focused control into view; sampling mid-scroll would report a header covering it for a frame.
     it('judges where an animated scroll comes to rest, not where it passes through', async () => {
       const filler = '<div style="height:1200px">filler</div>'
       const css = 'html { scroll-behavior: smooth; scroll-padding-top: 130px } header { position: sticky; top: 0; height: 100px; background: #ccc } a { outline: 2px solid blue; display: block; width: 100px; margin-bottom: 8px }'
@@ -88,6 +101,7 @@ describe('expectKeyboardFocusVisible', () => {
     })
   })
 
+  // A button that was just clicked holds focus; the first Tab then leaves the document, and counting that as "no stops" would fail a good page.
   it('counts the stops of a page whose focus starts on its last control (the first Tab only wraps)', async () => {
     const page = await open('<a href="#a">one</a><button id="last">two</button>', 'a, button { outline: 2px solid blue }')
     await page.focus('#last')
@@ -120,6 +134,7 @@ describe('expectKeyboardFocusVisible', () => {
 describe('expectStickyHeaderHoldsStill', () => {
   const tall = '<div style="height:2000px">content</div>'
   const sticky = 'body { margin: 0 } header { position: sticky; top: 0; height: 40px; background: transparent; transition: background 100ms }'
+  // The fault this check exists for is the landing page's header, which was transparent until 8 px of scroll.
   /** A header that turns solid once the page has scrolled past 8 px: the fault this check exists for. */
   const solidifies = async (): Promise<Page> => {
     const page = await open(`<header>h</header>${tall}`, sticky)

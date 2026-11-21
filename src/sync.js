@@ -16,13 +16,16 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cspForProfile } from './csp.js'
 
+/** This package's `templates/` folder, found from this file so it works from `node_modules` and from a checkout. */
 const templates = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates')
+/** A template's text. */
 const tpl = (/** @type {string} */ name) => readFileSync(join(templates, name), 'utf8')
 
 /**
- * @param {string} root repository root
- * @param {{ write?: boolean }} [options]
- * @returns {{ file: string, ok: boolean, note: string }[]}
+ * Compare (or, with `write`, restore) the files a repository must keep identical to this package's templates.
+ * @param {string} root - the repository root
+ * @param {{ write?: boolean }} [options] - `write`: fix what differs instead of reporting it
+ * @returns {{ file: string, ok: boolean, note: string }[]} one entry per checked file, with what was found (or done)
  */
 export function sync(root, options = {}) {
   const pkgPath = join(root, 'package.json')
@@ -30,7 +33,11 @@ export function sync(root, options = {}) {
   const cfg = pkg.meddleware ?? {}
   /** @type {{ file: string, ok: boolean, note: string }[]} */
   const out = []
-  /** @param {string} file @param {string} want */
+  /**
+   * Check one file against its expected text, or write it when asked to.
+   * @param {string} file - the path relative to the root
+   * @param {string} want - the expected contents
+   */
   const expectFile = (file, want) => {
     const p = join(root, file)
     const have = existsSync(p) ? readFileSync(p, 'utf8') : null
@@ -48,6 +55,7 @@ export function sync(root, options = {}) {
     expectFile('postcss.config.js', tpl('postcss.config.js'))
     expectFile('stylelint.config.js', tpl('stylelint.config.js'))
   }
+  // A second block with the same condition, kept apart because it deletes files rather than comparing them.
   if (cfg.kind === 'app') {
     // The favicon set comes from `@meddleware/ui` through `brandIcons` (an app keeps none of its own).
     for (const f of ['public/favicon.svg', 'public/favicon.ico', 'public/apple-touch-icon.png']) {
@@ -59,6 +67,7 @@ export function sync(root, options = {}) {
       } else out.push({ file: f, ok: false, note: 'an app serves the brand icons through brandIcons; delete this file (mw-sync --write does)' })
     }
   }
+  // The audit allow-list is shared by every app that runs Lighthouse CI, so the entries (and their reasons and dates) are reviewed together.
   if (cfg.lhci === true) expectFile('.github/audit-allowlist.json', tpl('audit-allowlist.lhci.json'))
   if (cfg.csp) {
     const df = join(root, 'Dockerfile')

@@ -1,14 +1,31 @@
+/**
+ * Tests for the shared ESLint configuration (`vueApp`, `src/eslint.js`): the accessibility rules, the compat rule on source only, the
+ * optional Sui boundary, and a repository's own ignores. Each case lints a snippet with the real plugins and parsers.
+ */
 import { ESLint } from 'eslint'
 import { describe, expect, it } from 'vitest'
 import { vueApp } from '../src/eslint.js'
 
+/**
+ * An ESLint instance with the shared config and nothing else (no config file is read).
+ * @param options - the options `vueApp` takes
+ * @returns the instance
+ */
 function linter(options: Parameters<typeof vueApp>[0] = { name: 't' }) {
   return new ESLint({ cwd: process.cwd(), overrideConfigFile: true, overrideConfig: vueApp(options) as never })
 }
+/**
+ * Lint a snippet and name what it reported.
+ * @param code - the source text
+ * @param filePath - the path it is linted as (which decides the file type and which config objects apply)
+ * @param options - the options `vueApp` takes
+ * @returns the rule id of every message (`fatal: …` for a parse error, so a broken snippet cannot read as clean)
+ */
 async function rules(code: string, filePath: string, options?: Parameters<typeof vueApp>[0]): Promise<string[]> {
   const [result] = await linter(options).lintText(code, { filePath })
   return result!.messages.map((m) => m.ruleId ?? `fatal: ${m.message}`)
 }
+/** A Vue single-file component around a template, with a script that uses its one function (so no unused-variable noise). */
 const sfc = (template: string) => `<script setup lang="ts">\nconst f = (): void => {}\nf()\n</script>\n<template>\n${template}\n</template>\n`
 
 describe('vueApp accessibility rules', () => {
@@ -54,6 +71,7 @@ describe('vueApp compatibility and boundary', () => {
     expect(Object.keys((await e.calculateConfigForFile('tests/a.test.ts'))!.rules ?? {})).not.toContain('compat/compat')
   })
 
+  /** A snippet the Sui boundary refuses and plain config accepts. */
   const tx = "import { Transaction } from '@mysten/sui/transactions'\nexport const t = new Transaction()\n"
   it('applies the Sui chain-access boundary only when asked', async () => {
     expect(await rules(tx, 'src/a.ts')).toEqual([])
