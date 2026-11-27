@@ -55,6 +55,10 @@ node src/audit-gate.js                      # the dependency gate
 - **`.github/audit-gate.mjs` is not here any more.** The gate is `src/audit-gate.js` (the `mw-audit-gate` bin) and this repository's CI
   runs it directly; the nine identical copies in the other shared packages are FU-0196.
 
+## Documentation rules (workspace documentation standard, D144)
+
+Every file has a header and every declaration a TSDoc comment (private declarations included); comments say why. `node scripts/check-docs.mjs --report frontend-config` (in the workspace repository) is the gate. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Related
 
 - The audit: [`docs/audit/frontend-config-audit.md`](docs/audit/frontend-config-audit.md).
