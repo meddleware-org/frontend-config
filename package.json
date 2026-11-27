@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/frontend-config",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "type": "module",
   "description": "Shared frontend tooling for Meddleware apps: browser support, ESLint, Stylelint, html-validate, PostCSS, Playwright, axe, screenshots, Lighthouse and the Vite target.",
   "license": "0BSD",
@@ -108,7 +108,7 @@
   "dependencies": {
     "@axe-core/playwright": "~4.14.0",
     "@double-great/stylelint-a11y": "^3.8.3",
-    "@meddleware/eslint-config": "^0.0.4",
+    "@meddleware/eslint-config": "^0.0.5",
     "@vue/eslint-config-typescript": "^14.9.0",
     "autoprefixer": "^10.6.2",
     "browserslist-to-esbuild": "^2.1.1",

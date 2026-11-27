@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.17] - 2026-11-27
+
 ### Changed
 - Documentation pass (line-level annotation): every source file, test, template, workflow and configuration file explains itself; a Development
   section in the README; Commands, Gotchas and Related sections in CLAUDE.md; CONTRIBUTING.md and AGENTS.md. The shared templates
